@@ -1,12 +1,14 @@
-const { restart } = require("nodemon");
 const User = require("../models/user-model");
+const userController = {};
+const { uploader } = require("../config/cloudinary");
+const { dataUri } = require("../middlewares/dataUri");
 
 /**
  * @route GET api/users
  * @description Returns all users
  * @access Public
  */
-exports.getAll = async (req, res) => {
+userController.getAll = async (req, res) => {
   const users = await User.find({});
   res.status(200).json(users);
 };
@@ -16,7 +18,7 @@ exports.getAll = async (req, res) => {
  * @description Add a new user
  * @access Public
  */
-exports.add = async (req, res) => {
+userController.add = async (req, res) => {
   const { email } = req.body;
   try {
     // make sure this account doesn't already exist
@@ -44,7 +46,7 @@ exports.add = async (req, res) => {
  * @description Get a specific user
  * @access Public
  */
-exports.get = async (req, res) => {
+userController.get = async (req, res) => {
   try {
     const id = req.params.id;
 
@@ -65,10 +67,10 @@ exports.get = async (req, res) => {
  * @description Update user details
  * @access Public
  */
-exports.update = async (req, res) => {
+userController.update = async (req, res) => {
   try {
     const update = req.body;
-    const id = rerq.params.id;
+    const id = req.params.id;
     const userId = req.user._id;
 
     // Make sure the passed id is that of the logged in user
@@ -78,15 +80,45 @@ exports.update = async (req, res) => {
       });
     }
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      { $set: update },
-      { new: true }
-    );
+    // Check if client has uploaded profile image
+    if (!req.file) {
+      const user = await User.findByIdAndUpdate(
+        id,
+        { $set: update },
+        { new: true }
+      );
+      return res
+        .status(200)
+        .json({ message: "User has been updated", user: user });
+    }
 
-    return res
-      .status(200)
-      .json({ message: "User has been updated", user: user });
+    // Attempt to upload to cloudinary
+    const file = dataUri(req);
+
+    try {
+      const result = await uploader.upload(file);
+      const imageURL = result.url;
+
+      // update the user info with profile image
+      const userWithImage = await User.findByIdAndUpdate(
+        id,
+        { $set: { ...update, profileImage: imageURL } },
+        { new: true }
+      );
+
+      return res.status(200).json({
+        message: "User has been updated with profile image",
+        user: userWithImage,
+      });
+    } catch (err) {
+      return res.status(400).json({
+        message:
+          "Something went wrong while processing your update with profile image request.",
+        data: {
+          err,
+        },
+      });
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -97,7 +129,7 @@ exports.update = async (req, res) => {
  * @description Delete user
  * @access Public
  */
-exports.delete = async (req, res) => {
+userController.delete = async (req, res) => {
   try {
     const id = req.params.id;
     const userId = req.user._id;
@@ -117,3 +149,5 @@ exports.delete = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+module.exports = userController;

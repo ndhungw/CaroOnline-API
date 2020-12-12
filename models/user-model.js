@@ -45,6 +45,11 @@ const UserSchema = new mongoose.Schema(
       required: "Last Name is required",
       max: 100,
     },
+    profileImage: {
+      type: String,
+      required: false,
+      max: 255,
+    },
   },
   { timestamps: true }
 );
@@ -88,4 +93,6 @@ UserSchema.methods.generateJWT = function () {
 };
 
 mongoose.set("useFindAndModify", false);
-module.exports = mongoose.model("Users", UserSchema);
+const User = mongoose.model("Users", UserSchema);
+
+module.exports = User;
