@@ -12,6 +12,7 @@ require("./database/database");
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
+const testRouter = require("./routes/test");
 
 const app = express();
 
@@ -24,13 +25,15 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Initialize passport middleware
 app.use(passport.initialize());
-const jwtStrategy = require("./middlewares/jwt");
+const jwtStrategy = require("./config/strategies/jwt");
 passport.use(jwtStrategy);
 
+// ROUTING
 const authenticate = require("./middlewares/authenticate");
 
 app.use("/", indexRouter);
 app.use("/api/users", authenticate, usersRouter);
 app.use("/api/auth", authRouter);
+app.use("/test", testRouter);
 
 module.exports = app;

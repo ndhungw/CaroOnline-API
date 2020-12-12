@@ -1,15 +1,12 @@
-/**
- *
- */
-
 const User = require("../models/user-model");
+const authController = {};
 
 /**
  * @route POST api/auth/register
  * @description Register new user
  * @access Public
  */
-exports.register = async (req, res) => {
+authController.register = async (req, res) => {
   // make sure this account doesn't already exist
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -36,7 +33,7 @@ exports.register = async (req, res) => {
   }
 };
 
-exports.login = async (req, res) => {
+authController.login = async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
@@ -59,3 +56,5 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+module.exports = authController;
