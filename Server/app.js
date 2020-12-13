@@ -6,7 +6,7 @@ const cors = require("cors");
 const passport = require("passport");
 
 require("dotenv").config();
-require("./database/database");
+require("./config/database");
 
 // ROUTES
 const indexRouter = require("./routes/index");
@@ -25,7 +25,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Initialize passport middleware
 app.use(passport.initialize());
-const jwtStrategy = require("./config/strategies/jwt");
+const jwtStrategy = require("../Server/config/strategies/jwt");
 passport.use(jwtStrategy);
 
 // ROUTING

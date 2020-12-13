@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/user-controller");
+const userController = require("../../Server/controllers/user-controller");
 const { multerUploads } = require("../middlewares/multer");
 
 /* GET users listing. */
