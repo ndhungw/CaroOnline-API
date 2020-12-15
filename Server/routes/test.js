@@ -36,4 +36,28 @@ router.post("/upload", multerUploads, async (req, res) => {
   }
 });
 
+// using Twilio SendGrid's v3 Node.js Library
+// https://github.com/sendgrid/sendgrid-nodejs
+const sgMail = require("@sendgrid/mail");
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+router.post("/sendMail", async (req, res) => {
+  const msg = {
+    to: req.body.email, // Change to your recipient
+    from: process.env.FROM_EMAIL, // Change to your verified sender
+    subject: "Sending with SendGrid is Fun",
+    text: "text text text text text text ",
+    html: "<strong>and easy to do anywhere, even with Node.js</strong>",
+  };
+  sgMail
+    .send(msg)
+    .then(() => {
+      console.log("Email sent");
+      return res.status(200).json({ message: "Email sent successfully" });
+    })
+    .catch((error) => {
+      console.error(error);
+      return res.status(500).json({ message: "Email sent failed" });
+    });
+});
 module.exports = router;

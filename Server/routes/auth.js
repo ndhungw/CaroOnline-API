@@ -3,11 +3,12 @@ const router = express.Router();
 const { check } = require("express-validator");
 const validate = require("../middlewares/validate");
 const Auth = require("../controllers/auth-controller");
-
+const passwordController = require("../controllers/password-controller");
 router.get("/", (req, res) => {
   res.status(200).json({ message: "You are in the Auth Endpoint." });
 });
 
+// REGISTER
 router.post(
   "/register",
   [
@@ -28,6 +29,7 @@ router.post(
   Auth.register
 );
 
+// LOGIN
 router.post(
   "/login",
   [
@@ -36,6 +38,32 @@ router.post(
   ],
   validate,
   Auth.login
+);
+
+// Password RESET
+router.post(
+  "/recover",
+  [check("email").isEmail().withMessage("Enter a valid email address")],
+  validate,
+  passwordController.recover
+);
+
+// router.get("/reset/:token", passwordController.geResetView);
+
+router.post(
+  "/reset/:token",
+  [
+    check("password")
+      .not()
+      .isEmpty()
+      .isLength({ min: 6 })
+      .withMessage("Must be at least 6 chars long"),
+    check("confirmPassword", "Passwords do not match").custom(
+      (value, { req }) => value === req.body.password
+    ),
+  ],
+  validate,
+  passwordController.resetPassword
 );
 
 module.exports = router;

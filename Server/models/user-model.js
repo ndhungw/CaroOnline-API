@@ -11,11 +11,16 @@
  * This token will be returned to the user and will be required for accessing protected routes.
  *
  * The token payload includes the user's first name, last name, username and email address and is set to expire 60 days in the future.
+ *
+ * generatePasswordReset method
+ * used to generate a password reset token using the Node.js crypto module and and calculates an expiry time (1 hour),
+ * the user object is updated with this data.
  */
 
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const UserSchema = new mongoose.Schema(
   {
@@ -49,6 +54,14 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: false,
       max: 255,
+    },
+    resetPasswordToken: {
+      type: String,
+      require: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      require: false,
     },
   },
   { timestamps: true }
@@ -90,6 +103,13 @@ UserSchema.methods.generateJWT = function () {
   });
 
   return token;
+};
+
+// do not use the arrow function notation, it will change what 'this' is referring to,
+// so it not pointing the user document anymore.
+UserSchema.methods.generatePasswordReset = function () {
+  this.resetPasswordToken = crypto.randomBytes(20).toString("hex");
+  this.resetPasswordExpires = Date.now() + 1000 * 60 * 60; // expires in an hour
 };
 
 mongoose.set("useFindAndModify", false);
