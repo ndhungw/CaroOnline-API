@@ -13,6 +13,7 @@ const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const testRouter = require("./routes/test");
+const roomRouter = require("./routes/room");
 
 const app = express();
 
@@ -32,8 +33,10 @@ passport.use(jwtStrategy);
 const authenticate = require("./middlewares/authenticate");
 
 app.use("/", indexRouter);
-app.use("/api/users", authenticate, usersRouter);
 app.use("/api/auth", authRouter);
 app.use("/test", testRouter);
+
+app.use("/api/users", authenticate, usersRouter);
+app.use("/api/Room", authenticate, roomRouter);
 
 module.exports = app;
