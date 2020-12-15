@@ -11,3 +11,5 @@ router.get("/room/:roomId", roomController.getOneRoom);
 router.put("/room/:roomId", roomController.updateRoomInfo);
 // D
 router.delete("/room/:roomId", roomController.deleteRoom);
+
+module.exports = router;
