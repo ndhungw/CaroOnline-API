@@ -9,7 +9,8 @@ const RoomSchema = new mongoose.Schema(
         },
         RoomType: {
             type: mongoose.Schema.Types.ObjectId,
-            required: "Your room needs to have a type (either private or public)"
+            required: "Your room needs to have a type (either private or public)",
+            ref: 'RoomTypes'
         },
         Description: {
             type: mongoose.Schema.Types.String,
