@@ -5,7 +5,21 @@ const RoomSchema = new mongoose.Schema(
         Name: {
             type: mongoose.Schema.Types.String,
             required: "Your room need to have a name",
-            max: 100,
+            maxlength: 100,
+        },
+        RoomType: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: "Your room needs to have a type (either private or public)"
+        },
+        Description: {
+            type: mongoose.Schema.Types.String,
+            maxlength: 200,
+            default: null
+        },
+        Password: {
+            type: mongoose.Schema.Types.String,
+            maxlength: 256,
+            default: null,
         },
         IsPlaying: {
             type: mongoose.Schema.Types.Boolean,
@@ -24,7 +38,7 @@ const RoomSchema = new mongoose.Schema(
             index: true,
             ref: 'Users'
         },
-            // Playing slot or a room (2 of them)
+            // Playing slots or a room (2 of them)
         Player1: {
             type: mongoose.Schema.Types.ObjectId,
             default: null,
@@ -38,4 +52,6 @@ const RoomSchema = new mongoose.Schema(
     }, { timestamps: true }
 );
 
-module.exports.Room = mongoose.model('Room', RoomSchema);
+const Room = mongoose.model('Rooms', RoomSchema);
+
+module.exports = Room;
