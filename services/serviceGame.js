@@ -2,7 +2,7 @@ const ServiceGame = {
 
   calculateWinner(squares, winCondition, maxRow, maxCol, squareIndex) {
 
-    const rowNumber = (squareIndex - (squareIndex % maxRow)) / maxRow
+    const rowNumber = (squareIndex - (squareIndex % maxRow)) / maxRow;
     const colNumber = squareIndex % maxCol;
     const protentialWinner = squares[squareIndex];
 

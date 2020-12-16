@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const authenticate = require("../middlewares/authenticate");
 const Game = require("../models/game-model");
+const GameController = require("../controllers/game-controller");  
 
-router.get("/create", authenticate, (req, res) => {
-  const game = new Game();
-  
-})
+router.post("/create", authenticate, GameController.create);
+
+module.exports = router;

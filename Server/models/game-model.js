@@ -14,7 +14,6 @@ const GameSchema = new mongoose.Schema(
     player2: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
     },
 
     winCondition: {
@@ -41,7 +40,9 @@ const GameSchema = new mongoose.Schema(
 
 const Game = mongoose.model("games", GameSchema);
 Game.createNewGame = async ({player, maxCol, maxRow, winCondition}) => {
-  const board = Array.length(maxRow * maxCol).fill(0);
+  const length = maxRow * maxCol;
+  console.log(maxCol, maxRow);
+  const board = Array(length).fill(0);
   const game = new Game({
     player1: player, 
     maxRow: maxRow,
