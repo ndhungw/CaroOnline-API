@@ -70,4 +70,6 @@ router.post(
   passwordController.resetPassword
 );
 
+router.post("/activate/:activationToken", Auth.activate);
+
 module.exports = router;
