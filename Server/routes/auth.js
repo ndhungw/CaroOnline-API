@@ -4,8 +4,12 @@ const { check } = require("express-validator");
 const validate = require("../middlewares/validate");
 const Auth = require("../controllers/auth-controller");
 const passwordController = require("../controllers/password-controller");
-router.get("/", (req, res) => {
-  res.status(200).json({ message: "You are in the Auth Endpoint." });
+const authenticate = require("../middlewares/authenticate");
+
+router.get("/", authenticate, (req, res) => {
+  res
+    .status(200)
+    .json({ user: req.user, message: "You are in the Auth Endpoint." });
 });
 
 // REGISTER
@@ -65,5 +69,7 @@ router.post(
   validate,
   passwordController.resetPassword
 );
+
+router.post("/activate/:activationToken", Auth.activate);
 
 module.exports = router;

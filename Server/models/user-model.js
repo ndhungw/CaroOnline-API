@@ -57,11 +57,19 @@ const UserSchema = new mongoose.Schema(
     },
     resetPasswordToken: {
       type: String,
-      require: false,
+      required: false,
     },
     resetPasswordExpires: {
       type: Date,
-      require: false,
+      required: false,
+    },
+    active: {
+      type: Boolean,
+      default: false,
+    },
+    activationToken: {
+      type: String,
+      required: false,
     },
   },
   { timestamps: true }
@@ -112,7 +120,10 @@ UserSchema.methods.generatePasswordReset = function () {
   this.resetPasswordExpires = Date.now() + 1000 * 60 * 60; // expires in an hour
 };
 
-mongoose.set("useFindAndModify", false);
+UserSchema.methods.generateActivationToken = function () {
+  this.activationToken = crypto.randomBytes(20).toString("hex");
+};
+
 const User = mongoose.model("Users", UserSchema);
 
 module.exports = User;
