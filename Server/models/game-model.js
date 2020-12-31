@@ -32,13 +32,17 @@ const GameSchema = new mongoose.Schema(
       required: true,
     },
 
-    board: [{type:mongoose.Schema.Types.Array}],
+    board: {
+      type: Array,
+      required: true,
+    },
     
   },
   { timestamps: true }
 );
 
 const Game = mongoose.model("games", GameSchema);
+
 Game.createNewGame = async ({player, maxCol, maxRow, winCondition}) => {
   const length = maxRow * maxCol;
   console.log(maxCol, maxRow);

@@ -1,4 +1,18 @@
+const games = require("../models/game-model");
+
 const ServiceGame = {
+
+  async makeMove(gameId, player, position) {
+    console.log(gameId, player, position);
+    const game = await games.findById(gameId);
+    console.log("before: " +  game.board);
+    const newBoard = game.board.slice();
+    newBoard[position] = player;
+    game.board = newBoard;
+    await game.save();
+    console.log("after: " +  game.board);
+    console.log("move made");
+  },
 
   calculateWinner(squares, winCondition, maxRow, maxCol, squareIndex) {
 
@@ -165,9 +179,9 @@ const ServiceGame = {
     }
 
     return null;
-
-
   }
-}
 
-export default ServiceGame;
+
+};
+
+module.exports = ServiceGame;

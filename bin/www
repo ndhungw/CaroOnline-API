@@ -33,6 +33,7 @@ const io = require("socket.io")(server, {
 });
 server.on("error", onError);
 server.on("listening", onListening);
+const serviceSocket = require("../Server/services/serviceSocket");
 
 /**
  * Normalize a port into a number, string, or false.
@@ -91,6 +92,4 @@ function onListening() {
   console.log("Listening on " + bind);
 }
 
-io.on("connection", function(client) {
-  console.log("a new client");
-})
+io.on("connection", (client) => serviceSocket.HandleConnection(client))

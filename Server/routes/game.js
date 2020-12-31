@@ -6,4 +6,6 @@ const GameController = require("../controllers/game-controller");
 
 router.post("/create", authenticate, GameController.create);
 
+router.get("/:id", GameController.find);
+
 module.exports = router;
