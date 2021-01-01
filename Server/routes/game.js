@@ -8,4 +8,6 @@ router.post("/create", authenticate, GameController.create);
 
 router.get("/:id", GameController.find);
 
+router.put("/join/:id", authenticate, GameController.join);
+
 module.exports = router;

@@ -1,8 +1,8 @@
 const games = require("../models/game-model")
 
-const GameCotroller = {};
+const GameController = {};
 
-GameCotroller.create = async (req, res) => {
+GameController.create = async (req, res) => {
   try {
     console.log(req.body);
     const game = await games.createNewGame({
@@ -20,8 +20,25 @@ GameCotroller.create = async (req, res) => {
   
 }
 
-GameCotroller.find = async (req, res) => {
+GameController.find = async (req, res) => {
   const game = await games.findById(req.params.id);
   res.json(game);
 }
-module.exports = GameCotroller;
+
+GameController.join = async (req, res) => {
+  const game = await games.findById(req.params.id);
+  if (!game.player2) {
+    game.player2 = req.user._id,
+    res.status(200).json({game: game, message: "Game joined successfully"});
+  }
+  else {
+    if (game.player2 !== req.user._id) {
+      return res.status(200).json({game: null, message: "Game already fulled"});
+    }
+    else {
+      return res.status(200).json({game: game, message: "Game rejoined"});
+    }
+    
+  }
+}
+module.exports = GameController;
