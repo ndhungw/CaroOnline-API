@@ -8,14 +8,14 @@ const passport = require("passport");
 require("dotenv").config();
 require("./config/database");
 
+const app = express();
+
 // ROUTES
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const testRouter = require("./routes/test");
-const roomRouter = require("./routes/room");
-
-const app = express();
+const roomRouter = require("./routes/room")(app);
 
 app.use(cors());
 app.use(logger("dev"));

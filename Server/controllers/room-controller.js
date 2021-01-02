@@ -1,16 +1,17 @@
 const roomService = require('../services/roomService');
 const {ROOM_SERVICE_ERROR} = require("../constants/constants");
-const io = global.ioSocket;
 
 // TO DO
 module.exports.createNewRoom = async(req, res, next) => {
     const {user} = req;
     const {room_type, room_name, room_description, room_password} = req.body;
 
+    const io = req.ioSocket;
+
     try
     {
         const newRoom = await roomService.AddNewRoom({room_name, room_description, room_type, createdBy: user, room_password});
-        //io.to('index-page').broadcast.emit('new-room-created', {rooms: await roomService.getAllRooms()});
+        io.to('index-page').emit('new-room-created', {rooms: await roomService.getAllRooms({})});
         res.status(200).json({message: "Successfully created a new room", data: newRoom});
     }
     catch(e)

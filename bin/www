@@ -30,6 +30,9 @@ const io = require("socket.io")(server, {
   }
 });
 
+/* set io for app so we can app.get("io") to use */
+app.set("io", io);
+
 server.listen(port);
 server.on("error", onError);
 server.on("listening", onListening);
@@ -93,5 +96,3 @@ function onListening() {
 }
 
 io.on("connection", (client) => serviceSocket.HandleConnection(client));
-
-global.io = io;
