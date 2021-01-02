@@ -24,10 +24,16 @@ var server = http.createServer(app);
 /**
  * Listen on provided port, on all network interfaces.
  */
+const io = require("socket.io")(server, {
+  cors: {
+    origin: '*',
+  }
+});
 
 server.listen(port);
 server.on("error", onError);
 server.on("listening", onListening);
+const serviceSocket = require("../Server/services/serviceSocket");
 
 /**
  * Normalize a port into a number, string, or false.
@@ -85,3 +91,7 @@ function onListening() {
   debug("Listening on " + bind);
   console.log("Listening on " + bind);
 }
+
+io.on("connection", (client) => serviceSocket.HandleConnection(client));
+
+global.io = io;

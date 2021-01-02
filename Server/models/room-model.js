@@ -39,7 +39,7 @@ const RoomSchema = new mongoose.Schema(
             index: true,
             ref: 'Users'
         },
-            // Playing slots or a room (2 of them)
+        // Playing slots or a room (2 of them)
         Player1: {
             type: mongoose.Schema.Types.ObjectId,
             default: null,

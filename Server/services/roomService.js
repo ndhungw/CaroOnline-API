@@ -10,6 +10,7 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;
         exception.message = "Cannot create a new room without a name";
+        exception.status_code = 400;
         throw exception;
     }
     if(!createdBy) {
@@ -22,12 +23,6 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;
         exception.message = "Room has to have a type";
-        throw exception;
-    }
-    if(typeof room_password !== "string") {
-        const exception = new Error();
-        exception.name = ROOM_SERVICE_ERROR;
-        exception.message = "Room password is not a string";
         throw exception;
     }
     const session = await mongoose.startSession();
@@ -87,6 +82,22 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
     }
 }
 
-module.exports.getAllRooms = async({}) => {
-
+module.exports.getAllRooms = async({page_number, item_per_page}) => {
+    const documentsCount = await Room.estimatedDocumentCount();
+    // if no provide item per page, we get all
+    if(!item_per_page){
+        const rooms = await Room.find().exec();
+        return rooms;
+    }
+    // Otherwise, we get the page
+    const currentAmountOfRoomPagesInDatabase = parseInt(Math.ceil(documentsCount/item_per_page));
+    if(pageNumber > currentAmountOfRoomPagesInDatabase){
+        const exception = new Error();
+        exception.name = ROOM_SERVICE_ERROR;
+        exception.message = "Provided page_number to fetch is invalid";
+        exception.newMaxPage = currentAmountOfRoomPagesInDatabase;
+        throw exception;
+    }
+    const fetchedDocuments = await Room.find().skip((page_number-1)*item_per_page).limit(item_per_page).exec();
+    return fetchedDocuments;
 }

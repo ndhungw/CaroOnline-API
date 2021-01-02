@@ -37,6 +37,6 @@ app.use("/api/auth", authRouter);
 app.use("/test", testRouter);
 
 app.use("/api/users", authenticate, usersRouter);
-app.use("/api/Room", authenticate, roomRouter);
+app.use("/api/room-management", roomRouter);
 
 module.exports = app;
