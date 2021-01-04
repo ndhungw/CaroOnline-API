@@ -85,7 +85,7 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
 module.exports.getAllRooms = async({page_number, item_per_page}) => {
     const documentsCount = await Room.estimatedDocumentCount();
     // if no provide item per page, we get all
-    if(!item_per_page){
+    if(!item_per_page || !page_number){
         const rooms = await Room.find().exec();
         return rooms;
     }
