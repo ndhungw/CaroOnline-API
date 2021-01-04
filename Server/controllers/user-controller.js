@@ -82,11 +82,18 @@ userController.update = async (req, res) => {
 
     // Check if client has uploaded profile image
     if (!req.file) {
-      const user = await User.findByIdAndUpdate(
+      let user = await User.findByIdAndUpdate(
         id,
         { $set: update },
         { new: true }
       );
+
+      if (update.password) {
+        // if user want to change password
+        const updatedPasswordUser = await User(user).save();
+        user = updatedPasswordUser;
+      }
+
       return res
         .status(200)
         .json({ message: "User has been updated", user: user });

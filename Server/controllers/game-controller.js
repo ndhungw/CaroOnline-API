@@ -1,23 +1,44 @@
-const Game = require("../models/game-model")
+const games = require("../models/game-model")
 
-const GameCotroller = {
-  Create: async function(req, res) {
-    try {
-      const game = await Game.createNewGame({
-        player: req.user._id,
-        maxRow: req.body.maxRow,
-        maxCol: req.body.maxCol,
-        winCondition: req.body.winCondition,
-      });
+const GameController = {};
 
-      res.status(200).json({ game: game });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-    
+GameController.create = async (req, res) => {
+  try {
+    console.log(req.body);
+    const game = await games.createNewGame({
+      player: req.user._id,
+      maxCol: req.body.maxCol,
+      maxRow: req.body.maxRow,
+      winCondition: req.body.winCondition,
+    });
 
-
+    res.status(200).json({ game: game });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: error.message });
   }
+  
 }
 
-module.exports = GameCotroller;
+GameController.find = async (req, res) => {
+  const game = await games.findById(req.params.id);
+  res.json(game);
+}
+
+GameController.join = async (req, res) => {
+  const game = await games.findById(req.params.id);
+  if (!game.player2) {
+    game.player2 = req.user._id,
+    res.status(200).json({game: game, message: "Game joined successfully"});
+  }
+  else {
+    if (game.player2 !== req.user._id) {
+      return res.status(200).json({game: null, message: "Game already fulled"});
+    }
+    else {
+      return res.status(200).json({game: game, message: "Game rejoined"});
+    }
+    
+  }
+}
+module.exports = GameController;

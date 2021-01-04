@@ -16,6 +16,9 @@ const usersRouter = require("./routes/users");
 const authRouter = require("./routes/auth");
 const testRouter = require("./routes/test");
 const roomRouter = require("./routes/room")(app);
+const gameRouter = require("./routes/game");
+
+// const io = require("socket.io")(app.listen());
 
 app.use(cors());
 app.use(logger("dev"));
@@ -35,6 +38,13 @@ const authenticate = require("./middlewares/authenticate");
 app.use("/", indexRouter);
 app.use("/api/auth", authRouter);
 app.use("/test", testRouter);
+app.use("/game", gameRouter);
+
+// io.on("connection", function(client) {
+//   console.log("a new client");
+// })
+
+
 
 app.use("/api/users", authenticate, usersRouter);
 app.use("/api/room-management", roomRouter);
