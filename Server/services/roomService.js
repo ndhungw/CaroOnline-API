@@ -101,3 +101,20 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
     const fetchedDocuments = await Room.find().skip((page_number-1)*item_per_page).limit(item_per_page).exec();
     return fetchedDocuments;
 }
+
+module.exports.getRoomInfo = async({room_id}) => {
+    if(!room_id){
+        const exception = new Error();
+        exception.name = ROOM_SERVICE_ERROR;
+        exception.message = "Cannot get room info without an id";
+        throw exception;
+    }
+    const roomInfo = await Room.findById(room_id);
+    if(!roomInfo){
+        const exception = new Error();
+        exception.name = ROOM_SERVICE_ERROR;
+        exception.message = "Found no room with the id";
+        throw exception;
+    }
+    return roomInfo;
+}

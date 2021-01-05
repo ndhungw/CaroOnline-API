@@ -34,11 +34,6 @@ const io = require("socket.io")(server, {
 app.set("io", io);
 
 server.listen(port);
-const io = require("socket.io")(server, {
-  cors: {
-    origin: '*',
-  }
-});
 server.on("error", onError);
 server.on("listening", onListening);
 const serviceSocket = require("../Server/services/serviceSocket");
