@@ -26,6 +26,20 @@ const RoomSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.Boolean,
             default: false,
         },
+
+        CurrentGame: {
+            type: mongoose.Schema.Types.ObjectId,
+            default: null,
+            index: true,
+            ref: 'Game'
+        },
+
+        PlayedGames: [{
+            type: mongoose.Schema.Types.ObjectId,
+            index: true,
+            ref: 'Game'
+        }],
+
         //Reference fields
         CreatedBy: {
             type: mongoose.Schema.Types.ObjectId,

@@ -1,4 +1,7 @@
-const games = require("../models/game-model")
+const games = require("../models/game-model");
+const roomService = require('../services/roomService');
+const { ROOM_SERVICE_ERROR } = require("../constants/constants");
+const e = require("express");
 
 const GameController = {};
 
@@ -17,7 +20,7 @@ GameController.create = async (req, res) => {
     console.log(error);
     res.status(500).json({ message: error.message });
   }
-  
+
 }
 
 GameController.find = async (req, res) => {
@@ -26,19 +29,28 @@ GameController.find = async (req, res) => {
 }
 
 GameController.join = async (req, res) => {
-  const game = await games.findById(req.params.id);
-  if (!game.player2) {
-    game.player2 = req.user._id,
-    res.status(200).json({game: game, message: "Game joined successfully"});
-  }
-  else {
-    if (game.player2 !== req.user._id) {
-      return res.status(200).json({game: null, message: "Game already fulled"});
+  try {
+    const wantedroomId = await games.find({ roomId: req.params.roomId });
+    const wantedRoom = await roomService.getRoomInfo({ room_id: roomId });
+
+    let playeNumber = null;
+
+    //find out user is which player in the room
+    if (req.user === wantedRoom.Player1) {
+      playeNumber = 1;
     }
-    else {
-      return res.status(200).json({game: game, message: "Game rejoined"});
+    else if (req.user === wantedRoom.Player2) {
+      playeNumber = 2;
+    } else {
+      const error = new Error();
+      error.name = ROOM_SERVICE_ERROR;
+      error.message = "This room is full";
+
     }
-    
+    const currentGame = wantedRoom.CurrentGame;
+    res.status(200).json({currentGame: currentGame});
+  } catch (e) {
+    res.status(500).json({message: e.message});
   }
 }
 module.exports = GameController;

@@ -5,15 +5,9 @@ const crypto = require("crypto");
 
 const GameSchema = new mongoose.Schema(
   {
-    player1: {
+    roomId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-
-    player2: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Room',
     },
 
     playerMoveNext: {
@@ -48,13 +42,12 @@ const GameSchema = new mongoose.Schema(
 
 const Game = mongoose.model("games", GameSchema);
 
-Game.createNewGame = async ({player, maxCol, maxRow, winCondition}) => {
+Game.createNewGame = async ({roomId, maxCol, maxRow, winCondition}) => {
   const length = maxRow * maxCol;
   console.log(maxCol, maxRow);
   const board = Array(length).fill(0);
   const game = new Game({
-    player1: player,
-    player2: 0, 
+    roomId: roomId,
     playerMoveNext: 1,
     maxRow: maxRow,
     maxCol: maxCol,
