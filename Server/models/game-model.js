@@ -21,6 +21,13 @@ const GameSchema = new mongoose.Schema(
       required: true,
     },
 
+    winHighlight: [{type: Number}],
+
+    winner: {
+      type: Number,
+      default: 0,
+    },
+
     maxRow: {
       type: Number,
       required: true,

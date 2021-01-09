@@ -4,15 +4,12 @@ const roomService = require("../services/roomService");
 
 const ServiceGame = {
 
-  async makeMove(gameId, player, position) {
-    console.log(gameId, player, position);
-    const game = await games.findById(gameId);
-    console.log("before: " +  game.board);
+  async makeMove(game, position) {
+
     const newBoard = game.board.slice();
-    newBoard[position] = player;
+    newBoard[position] = game.playerMoveNext;
     game.board = newBoard;
     await game.save();
-    console.log("after: " +  game.board);
     console.log("move made");
   },
 
@@ -29,9 +26,7 @@ const ServiceGame = {
   },
 
 
-  async calculateWinner(gameId, squareIndex) {
-    const game = await games.findById(gameId);
-
+  async calculateWinner(game, squareIndex) {
     const maxRow= game.maxRow;
     const maxCol = game.maxCol;
     const squares = game.board;

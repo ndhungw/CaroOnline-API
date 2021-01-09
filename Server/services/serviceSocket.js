@@ -1,32 +1,41 @@
-const io = require("socket.io");
 const Game = require("../models/game-model");
 const ServiceGame = require("./serviceGame");
 
-const serviceSocket = {};
-
-serviceSocket.HandleConnection = (socket) => {
+module.exports = function (io) {
+  io.on("connection", (socket) => {
     console.log("a new client");
 
-    socket.on("make-move", async ({gameId, player, position}) => {
-      await ServiceGame.makeMove(gameId, player, position);
-      const result = await ServiceGame.calculateWinner(gameId, position);
+    socket.on("make-move", async ({ gameId, player, position }) => {
+      const game = await Game.findById(gameId);
+
+      await ServiceGame.makeMove(game, position);
+      const result = await ServiceGame.calculateWinner(game, position);
       if (result) {
-        console.log(result);
         console.log("emit winner-found");
-        socket.emit("winner-found", result);
+
+
+        result.highlight.map(e => {
+          game.winHighlight.push(e);
+        });
+        game.winner = player;
+        await game.save();
+
+        io.emit("winner-found", game);
       }
       else {
         console.log("emit update-board");
-        const game = await Game.findById(gameId);
-        socket.emit("update-board", game);
+        game.playerMoveNext = 3 - game.playerMoveNext;
+        await game.save();
+        console.log(game.playerMoveNext);
+        io.emit("update-board", game);
       }
     });
 
     //Subcribe to rooms representing pages the user is in
-    socket.on('page-status', (page)=>{
-        socket.join(page);
+    socket.on('page-status', (page) => {
+      socket.join(page);
     });
 
     socket.on("disconnect", () => console.log("client disconnect"));
-}
-module.exports = serviceSocket;
+  })
+};
