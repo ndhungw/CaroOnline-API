@@ -8,7 +8,6 @@ const GameController = {};
 
 GameController.create = async (req, res) => {
   try {
-    console.log(req.body);
     const game = await ServiceGame.createNewGame({
       roomId: req.body.roomId,
       maxCol: req.body.maxCol,
