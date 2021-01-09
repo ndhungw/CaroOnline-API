@@ -60,7 +60,8 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
             IsPlaying: false,
             CreatedBy: resultUser._id,
             UpdatedBy: resultUser._id,
-            Player1: resultUser._id
+            Player1: resultUser._id,
+            IsDeleted: false,
         }], {session: session});
         // Populate needed fields
         for(const entry of newRooms){
@@ -86,7 +87,7 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
     const documentsCount = await Room.estimatedDocumentCount();
     // if no provide item per page, we get all
     if(!item_per_page || !page_number){
-        const rooms = await Room.find().exec();
+        const rooms = await Room.find({IsDeleted: false}).exec();
         return rooms;
     }
     // Otherwise, we get the page
@@ -98,7 +99,7 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
         exception.newMaxPage = currentAmountOfRoomPagesInDatabase;
         throw exception;
     }
-    const fetchedDocuments = await Room.find().skip((page_number-1)*item_per_page).limit(item_per_page).exec();
+    const fetchedDocuments = await Room.find({IsDeleted: false}).skip((page_number-1)*item_per_page).limit(item_per_page).exec();
     return fetchedDocuments;
 }
 
