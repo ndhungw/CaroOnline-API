@@ -26,6 +26,10 @@ const RoomSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.Boolean,
             default: false,
         },
+        IsDeleted: {
+            type: mongoose.Schema.Types.Boolean,
+            default: false,
+        },
 
         CurrentGame: {
             type: mongoose.Schema.Types.ObjectId,
@@ -33,7 +37,6 @@ const RoomSchema = new mongoose.Schema(
             index: true,
             ref: 'Game'
         },
-
         PlayedGames: [{
             type: mongoose.Schema.Types.ObjectId,
             index: true,
