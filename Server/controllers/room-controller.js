@@ -44,9 +44,10 @@ module.exports.getAllRooms = async(req, res, next) => {
 
 // TO DO
 module.exports.getOneRoom = async(req, res, next) => {
+    const {roomId} = req.params;
     try
     {
-        res.status(501).json({message: "Not implemented this route yet"});
+        res.status(200).json({message: "your room info", data: await roomService.getRoomInfo({room_id: roomId})});
     }
     catch(e)
     {
