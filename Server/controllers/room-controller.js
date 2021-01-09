@@ -1,5 +1,6 @@
 const roomService = require('../services/roomService');
 const {ROOM_SERVICE_ERROR} = require("../constants/constants");
+const Game = require('../models/game-model');
 
 // TO DO
 module.exports.createNewRoom = async(req, res, next) => {
@@ -55,6 +56,42 @@ module.exports.getOneRoom = async(req, res, next) => {
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
         }
+        res.status(500).json({message: "Server encountered an internal error, please report to the one responsible for making this server"});
+    }   
+}
+
+module.exports.joinRoom = async(req, res) => {
+    const {roomId} = req.params;
+    try
+    {
+        const desiredRoom = await roomService.getRoomInfo({room_id: roomId});
+        let playerNumer = 0;
+        if (desiredRoom.createdBy === req.user._id) {
+            desiredRoom.Player1 = req.user._id;
+            playerNumer = 1;
+        }
+        else if (!desiredRoom.Player2) {
+            desiredRoom.Player2 = req.user._id;
+            playerNumer = 2;
+        }
+        else {
+            //save for game viewer
+        }
+
+        let currentGame = null;
+        if (desiredRoom.CurrentGame) {
+            currentGame = await Game.findById(desiredRoom.CurrentGame);
+        }
+        
+        res.status(200).json({currentGame: currentGame, playerNumer: playerNumer});
+    }
+    catch(e)
+    {
+        if(e.name && e.name === ROOM_SERVICE_ERROR){
+            res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
+            return;
+        }
+        console.log(e);
         res.status(500).json({message: "Server encountered an internal error, please report to the one responsible for making this server"});
     }   
 }

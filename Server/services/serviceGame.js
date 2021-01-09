@@ -1,4 +1,6 @@
+const { createNewGame } = require("../models/game-model");
 const games = require("../models/game-model");
+const roomService = require("../services/roomService");
 
 const ServiceGame = {
 
@@ -12,6 +14,18 @@ const ServiceGame = {
     await game.save();
     console.log("after: " +  game.board);
     console.log("move made");
+  },
+
+  async createNewGame({roomId, maxCol, maxRow, winCondition}) {
+    const game = await games.createNewGame({roomId, maxCol, maxRow, winCondition});
+
+    const room = await (await roomService.getRoomInfo({room_id: game.roomId}));
+    room.CurrentGame = game._id;
+    console.log(game);
+    room.PlayedGames.push(game._id);
+    await room.save();
+
+    return game;
   },
 
 

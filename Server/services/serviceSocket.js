@@ -10,7 +10,7 @@ serviceSocket.HandleConnection = (client) => {
       await ServiceGame.makeMove(gameId, player, position);
       const result = ServiceGame.calculateWinner(gameId, position);
       if (result) {
-        io.emit("winner-found", result);
+        client.emit("winner-found", result);
       }
     });
 
