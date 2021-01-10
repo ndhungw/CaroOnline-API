@@ -178,5 +178,11 @@ module.exports.checkRoomPassword = async ({room_id, room_password}) => {
             exception.message = "Password doesn't match!!";
             throw exception;
         }
+        if(roomInfo.Player1 && roomInfo.Player2){
+            const exception = new Error();
+            exception.name = ROOM_SERVICE_ERROR;
+            exception.message = "Private room is full, cannot join";
+            throw exception;
+        }
     }
 }
