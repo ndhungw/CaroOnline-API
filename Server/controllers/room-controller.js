@@ -76,10 +76,13 @@ module.exports.joinRoom = async(req, res) => {
                 desiredRoom.Player2 = req.user._id;
                 playerNumber = 2;
             }
-            else {
-                //save for game viewer
+            else if ((desiredRoom.Player2._id).toString() === (req.user._id).toString()) {
+                desiredRoom.Player2 = req.user._id;
+                playerNumber = 2;
             }
         }
+
+        await desiredRoom.save();
 
         console.log(playerNumber);
 
@@ -88,9 +91,7 @@ module.exports.joinRoom = async(req, res) => {
             currentGame = await Game.findById(desiredRoom.CurrentGame);
         }
 
-        
-        
-        res.status(200).json({currentGame: currentGame, playerNumber: playerNumber});
+        res.status(200).json({room: desiredRoom, currentGame: currentGame, playerNumber: playerNumber});
     }
     catch(e)
     {

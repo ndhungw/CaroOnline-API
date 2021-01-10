@@ -1,5 +1,7 @@
 const { createNewGame } = require("../models/game-model");
 const games = require("../models/game-model");
+const Room = require("../models/room-model");
+const User = require("../models/user-model");
 const roomService = require("../services/roomService");
 
 const ServiceGame = {
@@ -13,10 +15,10 @@ const ServiceGame = {
     console.log("move made");
   },
 
-  async createNewGame({roomId, maxCol, maxRow, winCondition}) {
-    const game = await games.createNewGame({roomId, maxCol, maxRow, winCondition});
+  async createNewGame({ roomId, maxCol, maxRow, winCondition }) {
+    const game = await games.createNewGame({ roomId, maxCol, maxRow, winCondition });
 
-    const room = await (await roomService.getRoomInfo({room_id: game.roomId}));
+    const room = await (await roomService.getRoomInfo({ room_id: game.roomId }));
     room.CurrentGame = game._id;
     console.log(game);
     room.PlayedGames.push(game._id);
@@ -25,9 +27,37 @@ const ServiceGame = {
     return game;
   },
 
+  async getWinner(game) {
+    const room = await Room.findById(game.roomId);
+    let announcement = "";
+
+    let username = ""
+    if (room) {
+      switch (game.winner) {
+        case 1:
+          username = await User.findById(room.Player1).username;
+          announcement = username + "has won";
+          break;
+
+        case 2:
+          username = await User.findById(room.Player2).username;
+          announcement = username + "has won";
+          break;
+
+        case 3:
+          announcement = "Tie, both have won";
+          break;
+
+        default:
+          break;
+      };
+      return announcement;
+    }
+  },
+
 
   async calculateWinner(game, squareIndex) {
-    const maxRow= game.maxRow;
+    const maxRow = game.maxRow;
     const maxCol = game.maxCol;
     const squares = game.board;
     const winCondition = game.winCondition;

@@ -3,6 +3,7 @@ const roomService = require('../services/roomService');
 const { ROOM_SERVICE_ERROR } = require("../constants/constants");
 const e = require("express");
 const ServiceGame = require("../services/serviceGame");
+const Game = require("../models/game-model");
 
 const GameController = {};
 
@@ -51,6 +52,19 @@ GameController.join = async (req, res) => {
     res.status(200).json({currentGame: currentGame});
   } catch (e) {
     res.status(500).json({message: e.message});
+  }
+}
+
+GameController.getWinner = async(req, res) => {
+  const gameId = req.body.gameId;
+
+  const game = await Game.findById(gameId);
+  if (game) {
+    const announcement = await ServiceGame.getWinner(game);
+    res.status(200).json({announcement: announcement});
+  }
+  else {
+    res.status(500).json({message: "Can't find game with is id"})
   }
 }
 module.exports = GameController;
