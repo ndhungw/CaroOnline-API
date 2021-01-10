@@ -87,7 +87,6 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
     const documentsCount = await Room.estimatedDocumentCount();
     page_number = parseInt(page_number);
     item_per_page = parseInt(item_per_page);
-
     // if no provide item per page, we get all
     if(!item_per_page || !page_number){
         const rooms = await Room.find({IsDeleted: false}).exec();
@@ -101,7 +100,7 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
             entry.Player1? (entry.Player1.password = undefined) : null;
             entry.Player2? (entry.Player2.password = undefined) : null;
         }
-        return rooms;
+        return {rooms, totalPages: 1};
     }
     // Otherwise, we get the page
     const currentAmountOfRoomPagesInDatabase = parseInt(Math.ceil(documentsCount/item_per_page));
@@ -123,7 +122,7 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
         entry.Player1? (entry.Player1.password = undefined) : null;
         entry.Player2? (entry.Player2.password = undefined) : null;
     }
-    return fetchedDocuments;
+    return {rooms: fetchedDocuments, totalPages: currentAmountOfRoomPagesInDatabase};
 }
 
 module.exports.getRoomInfo = async({room_id}) => {
@@ -148,4 +147,36 @@ module.exports.getRoomInfo = async({room_id}) => {
     roomInfo.Player1? (roomInfo.Player1.password = undefined) : null;
     roomInfo.Player2? (roomInfo.Player2.password = undefined) : null;
     return roomInfo;
+}
+
+module.exports.checkRoomPassword = async ({room_id, room_password}) => {
+    if(!room_id){
+        const exception = new Error();
+        exception.name = ROOM_SERVICE_ERROR;
+        exception.message = "Cannot check password for room without an id";
+        throw exception;
+    }
+    if(!room_password){
+        const exception = new Error();
+        exception.name = ROOM_SERVICE_ERROR;
+        exception.message = "Cannot check password if you dont provide a password to check for";
+        throw exception;
+    }
+    const roomInfo = await Room.findById(room_id);
+    if(!roomInfo){
+        const exception = new Error();
+        exception.name = ROOM_SERVICE_ERROR;
+        exception.message = "Found no room with the id";
+        throw exception;
+    }
+    await roomInfo.populate("RoomType").execPopulate();
+    if(roomInfo.RoomType.NumberId === 2){
+        const result = await bcrypt.compare(room_password, roomInfo.Password, null);
+        if(!result){
+            const exception = new Error();
+            exception.name = ROOM_SERVICE_ERROR;
+            exception.message = "Password doesn't match!!";
+            throw exception;
+        }
+    }
 }
