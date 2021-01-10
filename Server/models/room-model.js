@@ -39,7 +39,6 @@ const RoomSchema = new mongoose.Schema(
         },
         PlayedGames: [{
             type: mongoose.Schema.Types.ObjectId,
-            index: true,
             ref: 'Game'
         }],
 

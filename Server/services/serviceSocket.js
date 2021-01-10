@@ -1,24 +1,52 @@
-const io = require("socket.io");
+const Game = require("../models/game-model");
+const Room = require("../models/room-model");
+const { getRoomInfo } = require("./roomService");
 const ServiceGame = require("./serviceGame");
 
-const serviceSocket = {};
-
-serviceSocket.HandleConnection = (client) => {
+module.exports = function (io) {
+  io.on("connection", (socket) => {
     console.log("a new client");
 
-    client.on("make-move", async ({gameId, player, position}) => {
-      await ServiceGame.makeMove(gameId, player, position);
-      const result = ServiceGame.calculateWinner(gameId, position);
+    socket.on("make-move", async ({ gameId, player, position }) => {
+      const game = await Game.findById(gameId);
+
+      await ServiceGame.makeMove(game, position);
+      const result = await ServiceGame.calculateWinner(game, position);
       if (result) {
-        io.emit("winner-found", result);
+        console.log("emit winner-found");
+
+
+        result.highlight.map(e => {
+          game.winHighlight.push(e);
+        });
+        game.winner = player;
+        await game.save();
+
+        io.emit("winner-found", game);
+      }
+      else {
+        console.log("emit update-board");
+        game.playerMoveNext = 3 - game.playerMoveNext;
+        await game.save();
+        console.log(game.playerMoveNext);
+        io.emit("update-board", game);
       }
     });
 
     //Subcribe to rooms representing pages the user is in
-    client.on('page-status', (page)=>{
-        client.join(page);
+    socket.on('page-status', (page) => {
+      socket.join(page);
     });
 
-    client.on("disconnect", () => console.log("client disconnect"));
-}
-module.exports = serviceSocket;
+    socket.on('join-room', async({roomId}) => {
+      console.log("on join-room");
+      socket.join(roomId);
+      
+      const room = await getRoomInfo({room_id: roomId});
+      console.log(room);
+      io.in(roomId).emit("update-room", room);
+    })
+
+    socket.on("disconnect", () => console.log("client disconnect"));
+  })
+};

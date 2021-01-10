@@ -36,7 +36,7 @@ app.set("io", io);
 server.listen(port);
 server.on("error", onError);
 server.on("listening", onListening);
-const serviceSocket = require("../Server/services/serviceSocket");
+const serviceSocket = require("../Server/services/serviceSocket")(io);
 
 /**
  * Normalize a port into a number, string, or false.
@@ -95,4 +95,4 @@ function onListening() {
   console.log("Listening on " + bind);
 }
 
-io.on("connection", (client) => serviceSocket.HandleConnection(client))
+
