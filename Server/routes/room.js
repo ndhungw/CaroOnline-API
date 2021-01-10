@@ -19,7 +19,7 @@ module.exports = function(app){
     router.delete("/room/:roomId", authenticate, setIO, roomController.deleteRoom);
 
     //JOIN ROOM
-    router.get("/room/join/:roomId", authenticate, roomController.joinRoom);
+    router.get("/room/join/:roomId", authenticate, setIO, roomController.joinRoom);
 
     return router;
 }

@@ -62,6 +62,7 @@ module.exports.getOneRoom = async(req, res, next) => {
 
 module.exports.joinRoom = async(req, res) => {
     const {roomId} = req.params;
+    const io = req.ioSocket;
     try
     {
         const desiredRoom = await roomService.getRoomInfo({room_id: roomId});
@@ -88,8 +89,6 @@ module.exports.joinRoom = async(req, res) => {
             currentGame = await Game.findById(desiredRoom.CurrentGame);
         }
 
-        
-        
         res.status(200).json({currentGame: currentGame, playerNumber: playerNumber});
     }
     catch(e)
