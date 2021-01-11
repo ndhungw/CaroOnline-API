@@ -138,6 +138,7 @@ module.exports.updateRoomInfo = async(req, res, next) => {
     { 
         const updatedRoom = await roomService.updateRoomInfo({room_id: roomId, updatedBy: user, room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2});
         io.emit('update-room', updatedRoom);
+        io.to('index-page').emit('one-room-got-updated', await roomService.getAllRooms({}));
         res.status(200).json({message: "Updated the specified room", data: updatedRoom});
     }
     catch(e)
@@ -159,7 +160,7 @@ module.exports.deleteRoom = async(req, res, next) => {
     try
     {
         const deletedRoom = await roomService.deleteRoom({room_id: roomId, updatedBy: user});
-        io.to('index-page').emit('a-room-got-deleted', await roomService.getAllRooms({}));
+        io.to('index-page').emit('one-room-got-deleted', await roomService.getAllRooms({}));
         res.status(200).json({message: "Deleted the specified room", data: deletedRoom});
     }
     catch(e)

@@ -300,15 +300,19 @@ module.exports.updateRoomInfo = async ({room_id, room_name, room_description, up
             roomToUpdate.Player1 = resultUser._id;
         }
 
-        if(Player2){
-            const resultUser = await User.findById(Player2).session(session).exec();
-            if(!resultUser){
-                const exception = new Error();
-                exception.name = ROOM_SERVICE_ERROR;
-                exception.message = "Provided player 2 in the room is invalid";
-                throw exception;
+        if(Player2 || Player2 === null){
+            if(Player2){
+                const resultUser = await User.findById(Player2).session(session).exec();
+                if(!resultUser){
+                    const exception = new Error();
+                    exception.name = ROOM_SERVICE_ERROR;
+                    exception.message = "Provided player 2 in the room is invalid";
+                    throw exception;
+                }
+                roomToUpdate.Player2 = resultUser._id;
+            } else if (Player2 === null) {
+                roomToUpdate.Player2 = Player2;
             }
-            roomToUpdate.Player2 = resultUser._id;
         }
 
         // If save room after all updates
