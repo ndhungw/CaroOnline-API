@@ -133,10 +133,9 @@ module.exports.updateRoomInfo = async(req, res, next) => {
     const {room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2} = req.body;
 
     try
-    {
-        
+    { 
         const updatedRoom = await roomService.updateRoomInfo({room_id: roomId, updatedBy: user, room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2});
-        res.status(200).json({message: "Updated", data: updatedRoom});
+        res.status(200).json({message: "Updated the specified room", data: updatedRoom});
     }
     catch(e)
     {
@@ -149,9 +148,13 @@ module.exports.updateRoomInfo = async(req, res, next) => {
 }
 
 module.exports.deleteRoom = async(req, res, next) => {
+    const {roomId} = req.params;
+    const {user} = req;
+
     try
     {
-        res.status(501).json({message: "Not implemented this route yet"});
+        const deletedRoom = await roomService.deleteRoom({room_id: roomId, updatedBy: user});
+        res.status(200).json({message: "Deleted the specified room", data: deletedRoom});
     }
     catch(e)
     {

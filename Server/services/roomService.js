@@ -272,6 +272,10 @@ module.exports.updateRoomInfo = async ({room_id, room_name, room_description, up
             roomToUpdate.Name = room_name;
         }
 
+        if(room_description && room_description.length <= 200){
+            roomToUpdate.Description = romm_description;
+        }
+
         if(CurrentGame){
             const old_game = roomToUpdate.CurrentGame;
             const new_game = await Game.findById(CurrentGame).session(session).exec();
@@ -306,6 +310,64 @@ module.exports.updateRoomInfo = async ({room_id, room_name, room_description, up
             }
             roomToUpdate.Player2 = resultUser._id;
         }
+
+        // If save room after all updates
+        await roomToUpdate.save();
+
+        // Populate needed fields
+        await roomToUpdate.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
+        // Set all password to undefined to prevent data breach
+        roomToUpdate.Password = undefined;
+        roomToUpdate.CreatedBy? (roomToUpdate.CreatedBy.password = undefined) :  null;
+        roomToUpdate.UpdatedBy? (roomToUpdate.UpdatedBy.password = undefined) :  null;
+        roomToUpdate.Player1? (roomToUpdate.Player1.password = undefined) : null;
+        roomToUpdate.Player2? (roomToUpdate.Player2.password = undefined) : null;
+        await session.commitTransaction();
+        session.endSession();
+        return roomToUpdate;
+    } catch (e) {
+        await session.abortTransaction();
+        session.endSession();
+        throw e;
+    }
+}
+
+module.exports.deleteRoom = async ({room_id, updatedBy}) => {
+    if(!updatedBy) {
+        const exception = new Error();
+        exception.name = ROOM_SERVICE_ERROR;
+        exception.message = "Room has to be updated by someone";
+        throw exception;
+    }
+    if(!room_id) {
+        const exception = new Error();
+        exception.name = ROOM_SERVICE_ERROR;
+        exception.message = "Need room id to update";
+        throw exception;
+    }
+    const session = await mongoose.startSession();
+    try{
+        session.startTransaction();
+        // First find the room
+        const roomToUpdate = await Room.findById(room_id).session(session).exec();
+        if(!roomToUpdate) {
+            const exception = new Error();
+            exception.name = ROOM_SERVICE_ERROR;
+            exception.message = "Room is not valid to update";
+            throw exception;
+        }
+
+        // check the validity of the user this is updatedBy
+        const resultUser = await User.findById(updatedBy._id).session(session).exec();
+        if(!resultUser){
+            const exception = new Error();
+            exception.name = ROOM_SERVICE_ERROR;
+            exception.message = "Provided user that updates the room is invalid";
+            throw exception;
+        }
+        roomToUpdate.UpdatedBy = resultUser._id;
+
+        roomToUpdate.IsDeleted = true;
 
         // If save room after all updates
         await roomToUpdate.save();
