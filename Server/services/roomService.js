@@ -64,18 +64,20 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
             Player1: resultUser._id,
             IsDeleted: false,
         }], {session: session});
-        await session.commitTransaction();
-        session.endSession();
+        
         // Populate needed fields
         for(const entry of newRooms){
             await entry.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
+        } 
+        for(const entry of newRooms){
             // Set all password to undefined to prevent data breach
-            entry.Password = undefined;
             entry.CreatedBy? (entry.CreatedBy.password = undefined) :  null;
             entry.UpdatedBy? (entry.UpdatedBy.password = undefined) :  null;
             entry.Player1? (entry.Player1.password = undefined) : null;
             entry.Player2? (entry.Player2.password = undefined) : null;
-        }  
+        }
+        await session.commitTransaction();
+        session.endSession();
         return newRooms;
     } catch (e) {
         await session.abortTransaction();
@@ -105,7 +107,7 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
     }
     // Otherwise, we get the page
     const currentAmountOfRoomPagesInDatabase = parseInt(Math.ceil(documentsCount/item_per_page));
-    if(page_number > currentAmountOfRoomPagesInDatabase){
+    if(page_number > currentAmountOfRoomPagesInDatabase && currentAmountOfRoomPagesInDatabase !== 0){
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;
         exception.message = "Provided page_number to fetch is invalid";
@@ -143,12 +145,6 @@ module.exports.getRoomInfo = async({room_id}) => {
         throw exception;
     }
     await roomInfo.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
-    // Set all password to undefined to prevent data breach
-    roomInfo.Password = undefined;
-    roomInfo.CreatedBy? (roomInfo.CreatedBy.password = undefined) :  null;
-    roomInfo.UpdatedBy? (roomInfo.UpdatedBy.password = undefined) :  null;
-    roomInfo.Player1? (roomInfo.Player1.password = undefined) : null;
-    roomInfo.Player2? (roomInfo.Player2.password = undefined) : null;
     return roomInfo;
 }
 
@@ -320,7 +316,6 @@ module.exports.updateRoomInfo = async ({room_id, room_name, room_description, up
 
         // Populate needed fields
         await roomToUpdate.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
-        // Set all password to undefined to prevent data breach
         await session.commitTransaction();
         session.endSession();
         roomToUpdate.Password = undefined;

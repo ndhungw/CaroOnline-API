@@ -87,6 +87,13 @@ module.exports.joinRoom = async(req, res) => {
             }
 
             await desiredRoom.save();
+
+            // Set all password to undefined to prevent data breach
+            desiredRoom.Password = undefined;
+            desiredRoom.CreatedBy? (desiredRoom.CreatedBy.password = undefined) :  null;
+            desiredRoom.UpdatedBy? (desiredRoom.UpdatedBy.password = undefined) :  null;
+            desiredRoom.Player1? (desiredRoom.Player1.password = undefined) : null;
+            desiredRoom.Player2? (desiredRoom.Player2.password = undefined) : null;
         }
         let currentGame = null;
         if (desiredRoom.CurrentGame) {
