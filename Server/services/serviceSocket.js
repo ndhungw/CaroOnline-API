@@ -43,6 +43,9 @@ module.exports = function (io) {
       io.in(roomId).emit("update-room", room);
     })
 
-    socket.on("disconnect", () => console.log("client disconnect"));
+    socket.on("disconnect", () => {
+      
+      console.log("client disconnect");
+    });
   })
 };
