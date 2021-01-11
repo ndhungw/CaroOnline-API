@@ -39,11 +39,7 @@ module.exports = function (io) {
     });
 
     socket.on('join-room', async({roomId}) => {
-      console.log("on join-room");
-      socket.join(roomId);
-      
       const room = await getRoomInfo({room_id: roomId});
-      console.log(room);
       io.in(roomId).emit("update-room", room);
     })
 
