@@ -4,6 +4,7 @@ const {ROOM_SERVICE_ERROR, PRIVATE_ROOM_ID} = require("../constants/constants");
 const mongoose = require("mongoose");
 const User = require('../models/user-model');
 const bcrypt = require("bcrypt");
+//const { parse } = require('dotenv/types');
 
 module.exports.AddNewRoom = async ({room_name, room_description, room_type, createdBy, room_password}) => {
     if(!room_name) {
@@ -86,11 +87,13 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
 }
 
 module.exports.getAllRooms = async({page_number, item_per_page}) => {
+    page_number = parseInt(page_number);
+    item_per_page = parseInt(item_per_page);
     const documentsCount = await Room.estimatedDocumentCount();
     // if no provide item per page, we get all
     if(!item_per_page || !page_number){
         const rooms = await Room.find({IsDeleted: false}).exec();
-        return rooms;
+        return {rooms, totalPages: 1};
     }
     // Otherwise, we get the page
     const currentAmountOfRoomPagesInDatabase = parseInt(Math.ceil(documentsCount/item_per_page));
@@ -102,7 +105,7 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
         throw exception;
     }
     const fetchedDocuments = await Room.find({IsDeleted: false}).skip((page_number-1)*item_per_page).limit(item_per_page).exec();
-    return fetchedDocuments;
+    return {rooms: fetchedDocuments, totalPages: currentAmountOfRoomPagesInDatabase};
 }
 
 module.exports.getRoomInfo = async({room_id}) => {

@@ -72,7 +72,7 @@ module.exports.joinRoom = async(req, res) => {
             //     desiredRoom.Player1 = req.user._id;
             //     playerNumber = 1;
         
-        if ((desiredRoom.CreatedBy).toString() === (req.user._id).toString()) {
+        if ((desiredRoom.CreatedBy._id).toString() === (req.user._id).toString()) {
             desiredRoom.Player1 = req.user._id;
             playerNumber = 1;
         }
@@ -116,6 +116,12 @@ module.exports.joinRoom = async(req, res) => {
 }
 
 module.exports.updateRoomInfo = async(req, res, next) => {
+    const {roomId} = req.params;
+    const {user} = req;
+    const io = req.ioSocket;
+
+    const {room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2} = req.body;
+
     try
     { 
         const updatedRoom = await roomService.updateRoomInfo({room_id: roomId, updatedBy: user, room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2});
@@ -125,6 +131,7 @@ module.exports.updateRoomInfo = async(req, res, next) => {
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
@@ -134,6 +141,11 @@ module.exports.updateRoomInfo = async(req, res, next) => {
 }
 
 module.exports.deleteRoom = async(req, res, next) => {
+    const {roomId} = req.params;
+    const {user} = req;
+
+    const io = req.ioSocket;
+
     try
     {
         const deletedRoom = await roomService.deleteRoom({room_id: roomId, updatedBy: user});
@@ -143,6 +155,7 @@ module.exports.deleteRoom = async(req, res, next) => {
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
