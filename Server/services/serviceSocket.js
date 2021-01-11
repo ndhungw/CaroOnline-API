@@ -3,19 +3,64 @@ const Room = require("../models/room-model");
 const { getRoomInfo } = require("./roomService");
 const ServiceGame = require("./serviceGame");
 
+const timePerTurn = 3 * 60;
+
 module.exports = function (io) {
   io.on("connection", (socket) => {
+
+    let countdown = timePerTurn;
+
+    let timer;
+
+    const setCountdown = (seconds) => {
+      countdown = seconds;
+    }
+
+    const startCountdown = (game) => {
+      timer = setInterval(async function() {
+        countdown--;
+        io.in((game.roomId).toString()).emit('countdown', countdown);
+
+        if (countdown === 0) {
+          game.winner = 3 - game.playerMoveNext;
+          await game.save();
+          io.in((game.roomId).toString()).emit('timeout', game);
+          clearInterval(timer);
+        }
+      },1000);
+    }
+
+    const resetCountdown = () => {
+      countdown = timePerTurn;
+
+    }
+
+    const stopCoundown = () => {
+      clearInterval(timer);
+    }
+
     console.log("a new client");
+
+
+    socket.on("new-game", async({gameId}) => {
+      const game = await Game.findById(gameId);
+
+      socket.to(game.roomId.toString()).emit("update-new-game", game);
+
+      setCountdown(timePerTurn);
+      startCountdown(game);
+    })
 
     socket.on("make-move", async ({ gameId, player, position }) => {
       const game = await Game.findById(gameId);
 
       await ServiceGame.makeMove(game, position);
+      resetCountdown();
       const result = await ServiceGame.calculateWinner(game, position);
       if (result) {
         console.log("emit winner-found");
-
-
+        
+        stopCoundown();
         result.highlight.map(e => {
           game.winHighlight.push(e);
         });
@@ -28,8 +73,8 @@ module.exports = function (io) {
         console.log("emit update-board");
         game.playerMoveNext = 3 - game.playerMoveNext;
         await game.save();
-        console.log(game.playerMoveNext);
-        io.emit("update-board", game);
+
+        io.in(game.roomId.toString()).emit("update-board", game);
       }
     });
 
@@ -40,11 +85,10 @@ module.exports = function (io) {
 
     socket.on('join-room', async({roomId}) => {
       console.log("on join-room");
-      socket.join(roomId);
+      socket.join(roomId.toString());
       
       const room = await getRoomInfo({room_id: roomId});
-      console.log(room);
-      io.in(roomId).emit("update-room", room);
+      io.in(roomId.toString()).emit("update-room", room);
     })
 
     socket.on("disconnect", () => console.log("client disconnect"));

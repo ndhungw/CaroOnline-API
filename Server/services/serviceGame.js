@@ -11,16 +11,20 @@ const ServiceGame = {
     const newBoard = game.board.slice();
     newBoard[position] = game.playerMoveNext;
     game.board = newBoard;
+    game.history.push({player: game.playerMoveNext, position: position});
     await game.save();
+    console.log(game);
     console.log("move made");
   },
 
   async createNewGame({ roomId, maxCol, maxRow, winCondition }) {
-    const game = await games.createNewGame({ roomId, maxCol, maxRow, winCondition });
+    const room = await (await roomService.getRoomInfo({ room_id: roomId }));
 
-    const room = await (await roomService.getRoomInfo({ room_id: game.roomId }));
+    const firstTurn = ((room.PlayedGames.length) % 2) + 1;
+    const game = await games.createNewGame({ roomId, maxCol, maxRow, firstTurn, winCondition });
+
+    
     room.CurrentGame = game._id;
-    console.log(game);
     room.PlayedGames.push(game._id);
     await room.save();
 
