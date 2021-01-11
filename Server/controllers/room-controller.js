@@ -71,7 +71,7 @@ module.exports.joinRoom = async(req, res) => {
         let playerNumber = 0;
 
         if(req.user){
-            if ((desiredRoom.Player1).toString() === (req.user._id).toString()) {
+            if ((desiredRoom.Player1._id).toString() === (req.user._id).toString()) {
                 desiredRoom.Player1 = req.user._id;
                 playerNumber = 1;
             }
