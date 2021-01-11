@@ -7,6 +7,14 @@ module.exports = function (io) {
   io.on("connection", (socket) => {
     console.log("a new client");
 
+    socket.on("new-game", async({gameId}) => {
+      const game = await Game.findById(gameId);
+
+      socket.to(game.roomId.toString()).emit("update-new-game", game);
+
+
+    })
+
     socket.on("make-move", async ({ gameId, player, position }) => {
       const game = await Game.findById(gameId);
 
@@ -28,8 +36,8 @@ module.exports = function (io) {
         console.log("emit update-board");
         game.playerMoveNext = 3 - game.playerMoveNext;
         await game.save();
-        console.log(game.playerMoveNext);
-        io.emit("update-board", game);
+
+        io.in(game.roomId.toString()).emit("update-board", game);
       }
     });
 
@@ -40,11 +48,10 @@ module.exports = function (io) {
 
     socket.on('join-room', async({roomId}) => {
       console.log("on join-room");
-      socket.join(roomId);
+      socket.join(roomId.toString());
       
       const room = await getRoomInfo({room_id: roomId});
-      console.log(room);
-      io.in(roomId).emit("update-room", room);
+      io.in(roomId.toString()).emit("update-room", room);
     })
 
     socket.on("disconnect", () => console.log("client disconnect"));

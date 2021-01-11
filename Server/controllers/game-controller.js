@@ -29,42 +29,4 @@ GameController.find = async (req, res) => {
   res.json(game);
 }
 
-GameController.join = async (req, res) => {
-  try {
-    const wantedroomId = await games.find({ roomId: req.params.roomId });
-    const wantedRoom = await roomService.getRoomInfo({ room_id: roomId });
-
-    let playeNumber = null;
-
-    //find out user is which player in the room
-    if (req.user === wantedRoom.Player1) {
-      playeNumber = 1;
-    }
-    else if (req.user === wantedRoom.Player2) {
-      playeNumber = 2;
-    } else {
-      const error = new Error();
-      error.name = ROOM_SERVICE_ERROR;
-      error.message = "This room is full";
-
-    }
-    const currentGame = wantedRoom.CurrentGame;
-    res.status(200).json({currentGame: currentGame});
-  } catch (e) {
-    res.status(500).json({message: e.message});
-  }
-}
-
-GameController.getWinner = async(req, res) => {
-  const gameId = req.body.gameId;
-
-  const game = await Game.findById(gameId);
-  if (game) {
-    const announcement = await ServiceGame.getWinner(game);
-    res.status(200).json({announcement: announcement});
-  }
-  else {
-    res.status(500).json({message: "Can't find game with is id"})
-  }
-}
 module.exports = GameController;

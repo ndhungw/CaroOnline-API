@@ -49,13 +49,13 @@ const GameSchema = new mongoose.Schema(
 
 const Game = mongoose.model("games", GameSchema);
 
-Game.createNewGame = async ({roomId, maxCol, maxRow, winCondition}) => {
+Game.createNewGame = async ({roomId, maxCol, maxRow, firstTurn, winCondition}) => {
   const length = maxRow * maxCol;
   console.log(maxCol, maxRow);
   const board = Array(length).fill(0);
   const game = new Game({
     roomId: roomId,
-    playerMoveNext: 1,
+    playerMoveNext: firstTurn,
     maxRow: maxRow,
     maxCol: maxCol,
     winCondition: winCondition,
