@@ -1,7 +1,6 @@
 const Room = require('../models/room-model');
-const RoomType = require('../models/room-type-model');
-const Game = require('../models/game-model');
-const {ROOM_SERVICE_ERROR, PRIVATE_ROOM_ID, PUBLIC_ROOM_ID} = require("../constants/constants");
+const RoomType = require('../models/room-type-model')
+const {ROOM_SERVICE_ERROR, PRIVATE_ROOM_ID} = require("../constants/constants");
 const mongoose = require("mongoose");
 const User = require('../models/user-model');
 const bcrypt = require("bcrypt");
@@ -31,14 +30,14 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
         session.startTransaction();
         // check the validity of room type
         const resultRoomType = await RoomType.findOne({NumberId: room_type}).session(session).exec();
-        if(!resultRoomType){
+        if(resultRoomType == null){
             const exception = new Error();
             exception.name = ROOM_SERVICE_ERROR;
             exception.message = "Provided room_type is invalid";
             throw exception;
         }
         // If room is private (NumberId is 2)
-        if(resultRoomType.NumberId === PRIVATE_ROOM_ID && !room_password){
+        if(resultRoomType.NumberId == PRIVATE_ROOM_ID && !room_password){
             const exception = new Error();
             exception.name = ROOM_SERVICE_ERROR;
             exception.message = "Private room needs a password";
@@ -46,7 +45,7 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
         }
         // check the validity of the user this is createdBy
         const resultUser = await User.findById(createdBy._id).session(session).exec();
-        if(!resultUser){
+        if(resultUser == null){
             const exception = new Error();
             exception.name = ROOM_SERVICE_ERROR;
             exception.message = "Provided user that creates the room is invalid";
@@ -88,22 +87,10 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
 
 module.exports.getAllRooms = async({page_number, item_per_page}) => {
     const documentsCount = await Room.estimatedDocumentCount();
-    page_number = parseInt(page_number);
-    item_per_page = parseInt(item_per_page);
     // if no provide item per page, we get all
     if(!item_per_page || !page_number){
         const rooms = await Room.find({IsDeleted: false}).exec();
-        // Populate needed fields
-        for(const entry of rooms){
-            await entry.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
-            // Set all password to undefined to prevent data breach
-            entry.Password = undefined;
-            entry.CreatedBy? (entry.CreatedBy.password = undefined) :  null;
-            entry.UpdatedBy? (entry.UpdatedBy.password = undefined) :  null;
-            entry.Player1? (entry.Player1.password = undefined) : null;
-            entry.Player2? (entry.Player2.password = undefined) : null;
-        }
-        return {rooms, totalPages: 1};
+        return rooms;
     }
     // Otherwise, we get the page
     const currentAmountOfRoomPagesInDatabase = parseInt(Math.ceil(documentsCount/item_per_page));
@@ -115,17 +102,7 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
         throw exception;
     }
     const fetchedDocuments = await Room.find({IsDeleted: false}).skip((page_number-1)*item_per_page).limit(item_per_page).exec();
-    // Populate needed fields
-    for(const entry of fetchedDocuments){
-        await entry.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
-        // Set all password to undefined to prevent data breach
-        entry.Password = undefined;
-        entry.CreatedBy? (entry.CreatedBy.password = undefined) :  null;
-        entry.UpdatedBy? (entry.UpdatedBy.password = undefined) :  null;
-        entry.Player1? (entry.Player1.password = undefined) : null;
-        entry.Player2? (entry.Player2.password = undefined) : null;
-    }
-    return {rooms: fetchedDocuments, totalPages: currentAmountOfRoomPagesInDatabase};
+    return fetchedDocuments;
 }
 
 module.exports.getRoomInfo = async({room_id}) => {
