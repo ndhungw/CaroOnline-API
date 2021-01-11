@@ -3,7 +3,7 @@ const Room = require("../models/room-model");
 const { getRoomInfo } = require("./roomService");
 const ServiceGame = require("./serviceGame");
 
-const timePerTurn = 3 * 60;
+const timePerTurn = 30;
 
 module.exports = function (io) {
   io.on("connection", (socket) => {
@@ -16,15 +16,19 @@ module.exports = function (io) {
       countdown = seconds;
     }
 
-    const startCountdown = (game) => {
+    const startCountdown = (roomId, gameId) => {
+
       timer = setInterval(async function() {
         countdown--;
-        io.in((game.roomId).toString()).emit('countdown', countdown);
+        io.in((roomId).toString()).emit('countdown', countdown);
 
         if (countdown === 0) {
-          game.winner = 3 - game.playerMoveNext;
-          await game.save();
-          io.in((game.roomId).toString()).emit('timeout', game);
+          const newGame = await Game.findById(gameId);
+
+          newGame.winner = 3 - newGame.playerMoveNext;
+          await newGame.save();
+          
+          io.in((roomId).toString()).emit('timeout', newGame);
           clearInterval(timer);
         }
       },1000);
@@ -48,7 +52,7 @@ module.exports = function (io) {
       socket.to(game.roomId.toString()).emit("update-new-game", game);
 
       setCountdown(timePerTurn);
-      startCountdown(game);
+      startCountdown(game.roomId, game._id);
     })
 
     socket.on("make-move", async ({ gameId, player, position }) => {
