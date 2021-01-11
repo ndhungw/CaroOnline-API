@@ -124,9 +124,16 @@ module.exports.checkRoomJoinable = async (req, res, next) => {
 }
 
 module.exports.updateRoomInfo = async(req, res, next) => {
+    const {roomId} = req.params;
+    const {user} = req;
+
+    const {room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2} = req.body;
+
     try
     {
-        res.status(501).json({message: "Not implemented this route yet"});
+        
+        const updatedRoom = await roomService.updateRoomInfo({room_id: roomId, updatedBy: user, room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2});
+        res.status(200).json({message: "Updated", data: updatedRoom});
     }
     catch(e)
     {
