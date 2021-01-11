@@ -64,6 +64,8 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
             Player1: resultUser._id,
             IsDeleted: false,
         }], {session: session});
+        await session.commitTransaction();
+        session.endSession();
         // Populate needed fields
         for(const entry of newRooms){
             await entry.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
@@ -73,9 +75,7 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
             entry.UpdatedBy? (entry.UpdatedBy.password = undefined) :  null;
             entry.Player1? (entry.Player1.password = undefined) : null;
             entry.Player2? (entry.Player2.password = undefined) : null;
-        }
-        await session.commitTransaction();
-        session.endSession();
+        }  
         return newRooms;
     } catch (e) {
         await session.abortTransaction();
@@ -173,7 +173,7 @@ module.exports.checkRoomPassword = async ({room_id, room_password}) => {
         throw exception;
     }
     await roomInfo.populate("RoomType").execPopulate();
-    if(roomInfo.RoomType.NumberId === 2){
+    if(roomInfo.RoomType.NumberId === PRIVATE_ROOM_ID){
         const result = await bcrypt.compare(room_password, roomInfo.Password, null);
         if(!result){
             const exception = new Error();
@@ -311,7 +311,7 @@ module.exports.updateRoomInfo = async ({room_id, room_name, room_description, up
                 }
                 roomToUpdate.Player2 = resultUser._id;
             } else if (Player2 === null) {
-                roomToUpdate.Player2 = Player2;
+                roomToUpdate.Player2 = null;
             }
         }
 
@@ -321,13 +321,13 @@ module.exports.updateRoomInfo = async ({room_id, room_name, room_description, up
         // Populate needed fields
         await roomToUpdate.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
         // Set all password to undefined to prevent data breach
+        await session.commitTransaction();
+        session.endSession();
         roomToUpdate.Password = undefined;
         roomToUpdate.CreatedBy? (roomToUpdate.CreatedBy.password = undefined) :  null;
         roomToUpdate.UpdatedBy? (roomToUpdate.UpdatedBy.password = undefined) :  null;
         roomToUpdate.Player1? (roomToUpdate.Player1.password = undefined) : null;
         roomToUpdate.Player2? (roomToUpdate.Player2.password = undefined) : null;
-        await session.commitTransaction();
-        session.endSession();
         return roomToUpdate;
     } catch (e) {
         await session.abortTransaction();
@@ -378,14 +378,14 @@ module.exports.deleteRoom = async ({room_id, updatedBy}) => {
 
         // Populate needed fields
         await roomToUpdate.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
+        await session.commitTransaction();
+        session.endSession();
         // Set all password to undefined to prevent data breach
         roomToUpdate.Password = undefined;
         roomToUpdate.CreatedBy? (roomToUpdate.CreatedBy.password = undefined) :  null;
         roomToUpdate.UpdatedBy? (roomToUpdate.UpdatedBy.password = undefined) :  null;
         roomToUpdate.Player1? (roomToUpdate.Player1.password = undefined) : null;
-        roomToUpdate.Player2? (roomToUpdate.Player2.password = undefined) : null;
-        await session.commitTransaction();
-        session.endSession();
+        roomToUpdate.Player2? (roomToUpdate.Player2.password = undefined) : null;   
         return roomToUpdate;
     } catch (e) {
         await session.abortTransaction();

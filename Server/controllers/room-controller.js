@@ -53,6 +53,7 @@ module.exports.getOneRoom = async(req, res, next) => {
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
@@ -68,26 +69,25 @@ module.exports.joinRoom = async(req, res) => {
     {
         const desiredRoom = await roomService.getRoomInfo({room_id: roomId});
         let playerNumber = 0;
-        
-        if ((desiredRoom.CreatedBy).toString() === (req.user._id).toString()) {
-            desiredRoom.Player1 = req.user._id;
-            playerNumber = 1;
-        }
-        else {
-            if (!desiredRoom.Player2) {
-                desiredRoom.Player2 = req.user._id;
-                playerNumber = 2;
+
+        if(req.user){
+            if ((desiredRoom.Player1).toString() === (req.user._id).toString()) {
+                desiredRoom.Player1 = req.user._id;
+                playerNumber = 1;
             }
-            else if ((desiredRoom.Player2._id).toString() === (req.user._id).toString()) {
-                desiredRoom.Player2 = req.user._id;
-                playerNumber = 2;
+            else {
+                if (!desiredRoom.Player2) {
+                    desiredRoom.Player2 = req.user._id;
+                    playerNumber = 2;
+                }
+                else if ((desiredRoom.Player2._id).toString() === (req.user._id).toString()) {
+                    desiredRoom.Player2 = req.user._id;
+                    playerNumber = 2;
+                }
             }
+
+            await desiredRoom.save();
         }
-
-        await desiredRoom.save();
-
-        console.log(playerNumber);
-
         let currentGame = null;
         if (desiredRoom.CurrentGame) {
             currentGame = await Game.findById(desiredRoom.CurrentGame);
@@ -97,11 +97,11 @@ module.exports.joinRoom = async(req, res) => {
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
         }
-        console.log(e);
         res.status(500).json({message: "Server encountered an internal error, please report to the one responsible for making this server"});
     }   
 }
@@ -118,6 +118,7 @@ module.exports.checkRoomJoinable = async (req, res, next) => {
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
@@ -143,6 +144,7 @@ module.exports.updateRoomInfo = async(req, res, next) => {
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
@@ -165,6 +167,7 @@ module.exports.deleteRoom = async(req, res, next) => {
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
