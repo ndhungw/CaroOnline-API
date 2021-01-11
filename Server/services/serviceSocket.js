@@ -1,4 +1,6 @@
 const Game = require("../models/game-model");
+const Room = require("../models/room-model");
+const { getRoomInfo } = require("./roomService");
 const ServiceGame = require("./serviceGame");
 
 module.exports = function (io) {
@@ -35,6 +37,15 @@ module.exports = function (io) {
     socket.on('page-status', (page) => {
       socket.join(page);
     });
+
+    socket.on('join-room', async({roomId}) => {
+      console.log("on join-room");
+      socket.join(roomId);
+      
+      const room = await getRoomInfo({room_id: roomId});
+      console.log(room);
+      io.in(roomId).emit("update-room", room);
+    })
 
     socket.on("disconnect", () => console.log("client disconnect"));
   })

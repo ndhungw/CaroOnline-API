@@ -133,7 +133,9 @@ module.exports.getRoomInfo = async({room_id}) => {
         exception.message = "Cannot get room info without an id";
         throw exception;
     }
-    const roomInfo = await Room.findById(room_id);
+    const roomInfo = await Room.findById(room_id)
+    .populate("Player1", "username")
+    .populate("Player2", "username").exec();
     if(!roomInfo){
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;
