@@ -11,7 +11,9 @@ const ServiceGame = {
     const newBoard = game.board.slice();
     newBoard[position] = game.playerMoveNext;
     game.board = newBoard;
+    game.history.push({player: game.playerMoveNext, position: position});
     await game.save();
+    console.log(game);
     console.log("move made");
   },
 

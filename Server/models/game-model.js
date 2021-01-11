@@ -42,6 +42,10 @@ const GameSchema = new mongoose.Schema(
       type: Array,
       required: true,
     },
+
+    history: [{
+      type: Object,
+    }],
     
   },
   { timestamps: true }
@@ -59,6 +63,7 @@ Game.createNewGame = async ({roomId, maxCol, maxRow, firstTurn, winCondition}) =
     maxRow: maxRow,
     maxCol: maxCol,
     winCondition: winCondition,
+    history: [],
     board: board});
 
     await game.save();
