@@ -102,7 +102,11 @@ module.exports.joinRoom = async(req, res) => {
             currentGame = await Game.findById(desiredRoom.CurrentGame);
         }
 
-        res.status(200).json({room: desiredRoom, currentGame: currentGame, playerNumber: playerNumber});
+        res.status(200).json({
+            room: desiredRoom, 
+            username: req.user.username, 
+            currentGame: currentGame, 
+            playerNumber: playerNumber});
     }
     catch(e)
     {

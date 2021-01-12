@@ -1,3 +1,4 @@
+const Chat = require("../models/chat-model");
 const Game = require("../models/game-model");
 const Room = require("../models/room-model");
 const { getRoomInfo } = require("./roomService");
@@ -108,9 +109,28 @@ module.exports = function (io) {
       io.in(roomId.toString()).emit("update-room", room);
     })
 
+    socket.on("send-chat-message", async({roomId, message, username}) => {
+      let chat = await Chat.findOne({roomId: roomId});
+
+      if (!chat) {
+        chat = await Chat.createNew(roomId);
+      }
+
+      chat.messages.push({
+        username: username,
+        message: message,
+      })
+
+      await chat.save();
+
+      io.in(roomId.toString()).emit("update-chat", chat);
+    })
+
     socket.on("disconnect", () => {
       
       console.log("client disconnect");
     });
+
+
   })
 };
