@@ -86,7 +86,7 @@ module.exports.joinRoom = async(req, res) => {
                 }
 
                 await desiredRoom.save();
-                console.log(desiredRoom);
+                
 
                 // Set all password to undefined to prevent data breach
                 desiredRoom.Password = undefined;

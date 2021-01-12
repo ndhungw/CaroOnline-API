@@ -112,7 +112,9 @@ module.exports = function (io) {
         if(!resultingPlayer){
           playerInRoom = [...playerInRoom, {roomId: room._id.toString(), playerId: playerId.toString(), playerNumber, socket}];
         }else { 
+          const player_idx = playerInRoom.indexOf(resultingPlayer);
           resultingPlayer.socket = socket;
+          playerInRoom[player_idx] = resultingPlayer;
           socket.broadcast.to(roomId.toString()).emit('disconnect-other-tabs', {player: playerNumber, roomId: room._id.toString()});
         }
       }
@@ -171,16 +173,12 @@ module.exports = function (io) {
       const i = allClients.indexOf(socket);
       const item = allClients.splice(i, 1);
 
-      
-
       if(reason === 'ping timeout' || reason === 'transport close' || reason === 'io client disconnect'
       || reason === 'transport error') {
         const resultingPlayer = playerInRoom.find(entry => entry.socket.id === item.id);
         if(resultingPlayer) {
-          
           const foundIdx = playerInRoom.indexOf(resultingPlayer);
           playerInRoom.splice(foundIdx, 1);
-
           // remove from db if needed
           try{
             let room = await getRoomInfo({room_id: resultingPlayer.roomId, IsDeleted: false});
@@ -191,7 +189,6 @@ module.exports = function (io) {
               deleteRoom = !room.Player1 ? true : false;
             }
 
-            
             if(!deleteRoom){
               room = resultingPlayer.playerNumber === 2 ? 
               await updateRoomInfo({room_id: roomId.toString(), updatedBy: room.Player2, Player2: null})
@@ -209,8 +206,6 @@ module.exports = function (io) {
           }
         }  
       }
-
-      console.log(playerInRoom);
       
       console.log("client disconnect");
     });
