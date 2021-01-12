@@ -7,7 +7,7 @@ const GameSchema = new mongoose.Schema(
   {
     roomId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Room',
+      ref: "Room",
     },
 
     playerMoveNext: {
@@ -21,7 +21,7 @@ const GameSchema = new mongoose.Schema(
       required: true,
     },
 
-    winHighlight: [{type: Number}],
+    winHighlight: [{ type: Number }],
 
     winner: {
       type: Number,
@@ -43,17 +43,24 @@ const GameSchema = new mongoose.Schema(
       required: true,
     },
 
-    history: [{
-      type: Object,
-    }],
-    
+    history: [
+      {
+        type: Object,
+      },
+    ],
   },
   { timestamps: true }
 );
 
 const Game = mongoose.model("games", GameSchema);
 
-Game.createNewGame = async ({roomId, maxCol, maxRow, firstTurn, winCondition}) => {
+Game.createNewGame = async ({
+  roomId,
+  maxCol,
+  maxRow,
+  firstTurn,
+  winCondition,
+}) => {
   const length = maxRow * maxCol;
   console.log(maxCol, maxRow);
   const board = Array(length).fill(0);
@@ -64,10 +71,11 @@ Game.createNewGame = async ({roomId, maxCol, maxRow, firstTurn, winCondition}) =
     maxCol: maxCol,
     winCondition: winCondition,
     history: [],
-    board: board});
+    board: board,
+  });
 
-    await game.save();
-    return game;
-}
+  await game.save();
+  return game;
+};
 
 module.exports = Game;
