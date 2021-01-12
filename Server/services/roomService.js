@@ -89,7 +89,7 @@ module.exports.AddNewRoom = async ({room_name, room_description, room_type, crea
 module.exports.getAllRooms = async({page_number, item_per_page}) => {
     page_number = parseInt(page_number);
     item_per_page = parseInt(item_per_page);
-    const documentsCount = await Room.estimatedDocumentCount();
+    const documentsCount = await Room.countDocuments({IsDeleted: false});
     // if no provide item per page, we get all
     if(!item_per_page || !page_number){
         const rooms = await Room.find({IsDeleted: false}).exec();
@@ -108,25 +108,25 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
     return {rooms: fetchedDocuments, totalPages: currentAmountOfRoomPagesInDatabase};
 }
 
-module.exports.getRoomInfo = async({room_id}) => {
+module.exports.getRoomInfo = async({room_id, IsDeleted}) => {
     if(!room_id){
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;
         exception.message = "Cannot get room info without an id";
         throw exception;
     }
-    const roomInfo = await Room.findById(room_id)
-    .populate("Player1", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"])
-    .populate("Player2", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"])
-    .exec();
-
+    const roomInfo = await Room.findOne({_id: room_id.toString(), IsDeleted});
+    
     if(!roomInfo){
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;
         exception.message = "Found no room with the id";
         throw exception;
     }
-    await roomInfo.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
+
+    await roomInfo.populate("Player1", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).populate("Player2", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).execPopulate();
+
+    await roomInfo.populate("CreatedBy").populate("UpdatedBy").populate("RoomType").execPopulate();
     return roomInfo;
 }
 
@@ -267,15 +267,19 @@ module.exports.updateRoomInfo = async ({room_id, room_name, room_description, up
             roomToUpdate.PlayedGames = [...roomToUpdate.PlayedGames, old_game];
         }
 
-        if(Player1){
-            const resultUser = await User.findById(Player1).session(session).exec();
-            if(!resultUser){
-                const exception = new Error();
-                exception.name = ROOM_SERVICE_ERROR;
-                exception.message = "Provided player 1 in the room is invalid";
-                throw exception;
-            }
-            roomToUpdate.Player1 = resultUser._id;
+        if(Player1 || Player1 === null){
+            if(Player1){
+                const resultUser = await User.findById(Player1).session(session).exec();
+                if(!resultUser){
+                    const exception = new Error();
+                    exception.name = ROOM_SERVICE_ERROR;
+                    exception.message = "Provided player 1 in the room is invalid";
+                    throw exception;
+                }
+                roomToUpdate.Player1 = resultUser._id;
+            } else {
+                roomToUpdate.Player1 = null;
+            } 
         }
 
         if(Player2 || Player2 === null){
@@ -313,7 +317,7 @@ module.exports.updateRoomInfo = async ({room_id, room_name, room_description, up
     }
 }
 
-module.exports.deleteRoom = async ({room_id, updatedBy}) => {
+module.exports.deleteExistingRoom = async ({room_id, updatedBy}) => {
     if(!updatedBy) {
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;

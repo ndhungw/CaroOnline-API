@@ -21,5 +21,8 @@ module.exports = function(app){
     //JOIN ROOM
     router.get("/room/join/:roomId", authenticate, roomController.joinRoom);
 
+    //CHECK PASSWORD
+    router.post("/room/check-can-join/:roomId", authenticate, roomController.checkJoin);
+
     return router;
 }
