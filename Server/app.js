@@ -40,10 +40,6 @@ app.use("/api/auth", authRouter);
 app.use("/test", testRouter);
 app.use("/game", gameRouter);
 
-// io.on("connection", function(client) {
-//   console.log("a new client");
-// })
-
 
 
 app.use("/api/users", authenticate, usersRouter);
