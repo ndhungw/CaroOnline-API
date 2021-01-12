@@ -54,6 +54,7 @@ module.exports.getOneRoom = async(req, res, next) => {
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
@@ -85,6 +86,7 @@ module.exports.joinRoom = async(req, res) => {
                 }
 
                 await desiredRoom.save();
+                console.log(desiredRoom);
 
                 // Set all password to undefined to prevent data breach
                 desiredRoom.Password = undefined;
@@ -95,12 +97,35 @@ module.exports.joinRoom = async(req, res) => {
             }
         }
 
+        await desiredRoom.populate("Player1", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).populate("Player2", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).execPopulate();
+
         let currentGame = null;
         if (desiredRoom.CurrentGame) {
             currentGame = await Game.findById(desiredRoom.CurrentGame);
         }
 
         res.status(200).json({room: desiredRoom, currentGame: currentGame, playerNumber: playerNumber});
+    }
+    catch(e)
+    {
+        if(e.name && e.name === ROOM_SERVICE_ERROR){
+            res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
+            return;
+        }
+        console.log(e);
+        res.status(500).json({message: "Server encountered an internal error, please report to the one responsible for making this server"});
+    }   
+}
+
+module.exports.checkJoin = async(req, res, next) => {
+    const {roomId} = req.params;
+
+    const {room_password} = req.body;
+
+    try
+    {
+        await roomService.checkRoomPassword({room_id: roomId, room_password});
+        res.status(200).json({message: "check can join yoooo!"});
     }
     catch(e)
     {

@@ -115,18 +115,18 @@ module.exports.getRoomInfo = async({room_id, IsDeleted}) => {
         exception.message = "Cannot get room info without an id";
         throw exception;
     }
-    const roomInfo = await Room.findOne({_id: room_id, IsDeleted})
-    .populate("Player1", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"])
-    .populate("Player2", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"])
-    .exec();
-
+    const roomInfo = await Room.findOne({_id: room_id.toString(), IsDeleted});
+    
     if(!roomInfo){
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;
         exception.message = "Found no room with the id";
         throw exception;
     }
-    await roomInfo.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
+
+    await roomInfo.populate("Player1", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).populate("Player2", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).execPopulate();
+
+    await roomInfo.populate("CreatedBy").populate("UpdatedBy").populate("RoomType").execPopulate();
     return roomInfo;
 }
 
