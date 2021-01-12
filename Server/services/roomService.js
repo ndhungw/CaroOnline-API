@@ -116,8 +116,10 @@ module.exports.getRoomInfo = async({room_id, IsDeleted}) => {
         throw exception;
     }
     const roomInfo = await Room.findOne({_id: room_id, IsDeleted})
-    .populate("Player1", "username")
-    .populate("Player2", "username").exec();
+    .populate("Player1", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"])
+    .populate("Player2", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"])
+    .exec();
+
     if(!roomInfo){
         const exception = new Error();
         exception.name = ROOM_SERVICE_ERROR;
