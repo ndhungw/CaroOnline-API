@@ -42,10 +42,6 @@ app.use("/test", testRouter);
 app.use("/game", gameRouter); //TODO: game -> games
 app.use("/game-records", gameRecordsRouter);
 
-// io.on("connection", function(client) {
-//   console.log("a new client");
-// })
-
 app.use("/api/users", authenticate, usersRouter);
 app.use("/api/room-management", roomRouter);
 
