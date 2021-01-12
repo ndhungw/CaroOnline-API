@@ -12,7 +12,7 @@ module.exports.createNewRoom = async(req, res, next) => {
     try
     {
         const newRoom = await roomService.AddNewRoom({room_name, room_description, room_type, createdBy: user, room_password});
-        io.to('index-page').emit('new-room-created', {rooms: await roomService.getAllRooms({})});
+        io.emit('new-room-created', await roomService.getAllRooms({}));
         res.status(200).json({message: "Successfully created a new room", data: newRoom});
     }
     catch(e)
@@ -66,8 +66,13 @@ module.exports.joinRoom = async(req, res) => {
     {
         const desiredRoom = await roomService.getRoomInfo({room_id: roomId});
         let playerNumber = 0;
+
+        if(req.user){
+            // if ((desiredRoom.Player1._id).toString() === (req.user._id).toString()) {
+            //     desiredRoom.Player1 = req.user._id;
+            //     playerNumber = 1;
         
-        if ((desiredRoom.CreatedBy).toString() === (req.user._id).toString()) {
+        if ((desiredRoom.CreatedBy._id).toString() === (req.user._id).toString()) {
             desiredRoom.Player1 = req.user._id;
             playerNumber = 1;
         }
@@ -80,11 +85,17 @@ module.exports.joinRoom = async(req, res) => {
                 desiredRoom.Player2 = req.user._id;
                 playerNumber = 2;
             }
+
+            await desiredRoom.save();
+
+            // Set all password to undefined to prevent data breach
+            desiredRoom.Password = undefined;
+            desiredRoom.CreatedBy? (desiredRoom.CreatedBy.password = undefined) :  null;
+            desiredRoom.UpdatedBy? (desiredRoom.UpdatedBy.password = undefined) :  null;
+            desiredRoom.Player1? (desiredRoom.Player1.password = undefined) : null;
+            desiredRoom.Player2? (desiredRoom.Player2.password = undefined) : null;
         }
-
-        await desiredRoom.save();
-
-        console.log(playerNumber);
+        }
 
         let currentGame = null;
         if (desiredRoom.CurrentGame) {
@@ -105,12 +116,22 @@ module.exports.joinRoom = async(req, res) => {
 }
 
 module.exports.updateRoomInfo = async(req, res, next) => {
+    const {roomId} = req.params;
+    const {user} = req;
+    const io = req.ioSocket;
+
+    const {room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2} = req.body;
+
     try
-    {
-        res.status(501).json({message: "Not implemented this route yet"});
+    { 
+        const updatedRoom = await roomService.updateRoomInfo({room_id: roomId, updatedBy: user, room_name, room_description, room_type, new_room_password, password, IsPlaying, CurrentGame, Player1, Player2});
+        io.in(roomId).emit('update-room', {room: updatedRoom});
+        io.emit('one-room-got-updated', await roomService.getAllRooms({}));
+        res.status(200).json({message: "Updated the specified room", data: updatedRoom});
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
@@ -120,12 +141,21 @@ module.exports.updateRoomInfo = async(req, res, next) => {
 }
 
 module.exports.deleteRoom = async(req, res, next) => {
+    const {roomId} = req.params;
+    const {user} = req;
+
+    const io = req.ioSocket;
+
     try
     {
-        res.status(501).json({message: "Not implemented this route yet"});
+        const deletedRoom = await roomService.deleteRoom({room_id: roomId, updatedBy: user});
+        io.in(roomId).emit('update-room', {room: deletedRoom});
+        io.emit('one-room-got-deleted', await roomService.getAllRooms({}));
+        res.status(200).json({message: "Deleted the specified room", data: deletedRoom});
     }
     catch(e)
     {
+        console.log(e);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
