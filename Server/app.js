@@ -9,6 +9,8 @@ require("dotenv").config();
 require("./config/database");
 
 const app = express();
+global.playerInRoom = [];
+global.allClients = [];
 
 // ROUTES
 const indexRouter = require("./routes/index");

@@ -5,13 +5,9 @@ const ServiceGame = require("./serviceGame");
 
 const timePerTurn = 30;
 
-const allClients = [];
-
-let playerInRoom = [];
-
 module.exports = function (io) {
   io.on("connection", (socket) => {
-    allClients.push(socket);
+    allClients = [...allClients, socket];
     console.log("a new client");
 
     //SUPPORTING FUNCTION
@@ -113,19 +109,18 @@ module.exports = function (io) {
       if(playerNumber && room){
         const resultingPlayer = playerInRoom.find(entry => entry.roomId === room._id.toString() && entry.playerId === playerId.toString());
         if(!resultingPlayer){
-          playerInRoom = [...playerInRoom, {roomId: room._id.toString(), playerId, playerNumber, socket}];
-        }else {
-          if(resultingPlayer.connectionToRoomState === false){
-            resultingPlayer.connectionToRoomState = true;
-            resultingPlayer.socket = socket;
-          }
-          //io.in(roomId.toString()).emit('disconnect-other-tabs', {player: playerNumber});
+          playerInRoom = [...playerInRoom, {roomId: room._id.toString(), playerId: playerId.toString(), playerNumber, socket}];
+        }else { 
+          resultingPlayer.socket = socket;
+          socket.broadcast.to(roomId.toString()).emit('disconnect-other-tabs', {player: playerNumber, roomId: room._id.toString()});
         }
       }
 
+      console.log(playerInRoom);
+
       io.in(roomId.toString()).emit("update-room", room);
       
-    })
+    });
 
     socket.on('leave-room', async({roomId, playerNumber, player, deleteRoom}) => {
       console.log('someone left the room: ', roomId.toString());

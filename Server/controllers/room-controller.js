@@ -138,6 +138,34 @@ module.exports.checkJoin = async(req, res, next) => {
     }   
 }
 
+module.exports.checkInRoom = async (req, res, next) => {
+    const {user} = req;
+
+    try
+    {
+        if(!user){
+            const exception = new Error();
+            exception.name = ROOM_SERVICE_ERROR;
+            exception.message = "Need user id to check";
+            throw exception;
+        }
+        const resultingPlayer = playerInRoom.find(entry => entry.playerId.toString() === user._id.toString());
+        if(resultingPlayer){
+            res.status(200).json({data: resultingPlayer.roomId});
+        } else {
+            res.status(200).json({data: null});
+        }  
+    }
+    catch(e)
+    {
+        if(e.name && e.name === ROOM_SERVICE_ERROR){
+            res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
+            return;
+        }
+        res.status(500).json({message: "Server encountered an internal error, please report to the one responsible for making this server"});
+    } 
+}
+
 module.exports.updateRoomInfo = async(req, res, next) => {
     const {roomId} = req.params;
     const {user} = req;
