@@ -115,9 +115,6 @@ module.exports = function (io) {
           socket.broadcast.to(roomId.toString()).emit('disconnect-other-tabs', {player: playerNumber, roomId: room._id.toString()});
         }
       }
-
-      console.log(playerInRoom);
-
       io.in(roomId.toString()).emit("update-room", room);
       
     });
@@ -132,19 +129,19 @@ module.exports = function (io) {
           if(resultingPlayer){
             const foundIdx = playerInRoom.indexOf(resultingPlayer);
             playerInRoom.splice(foundIdx, 1);
+            let room; 
+            if(!deleteRoom){
+              room = playerNumber === 2 ? 
+              await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player2: null})
+              : await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player1: null});
+              io.emit('one-room-got-updated', await getAllRooms({}));
+            }else {
+              await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player1: null, Player2: null, IsDeleted: deleteRoom});
+              room = await deleteExistingRoom({room_id: roomId.toString(), updatedBy: player});
+              io.emit('one-room-got-deleted', await getAllRooms({}));
+            };
+            io.in(roomId.toString()).emit('update-room', room);
           }
-          let room; 
-          if(!deleteRoom){
-            room = playerNumber === 2 ? 
-            await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player2: null})
-            : await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player1: null});
-            io.emit('one-room-got-updated', await getAllRooms({}));
-          }else {
-            await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player1: null, Player2: null, IsDeleted: deleteRoom});
-            room = await deleteExistingRoom({room_id: roomId.toString(), updatedBy: player});
-            io.emit('one-room-got-deleted', await getAllRooms({}));
-          };
-          io.in(roomId.toString()).emit('update-room', room);
         }  
       } catch (e) {
         console.log(e);
@@ -152,16 +149,50 @@ module.exports = function (io) {
       }
     });
 
-    socket.on("disconnect", (reason) => {
+    socket.on("disconnect", async (reason) => {
       const i = allClients.indexOf(socket);
       const item = allClients.splice(i, 1);
+
       
-      const resultingPlayer = playerInRoom.find(entry => entry.socket.id === item.id);
-      if(resultingPlayer) {
-        const foundIdx = playerInRoom.indexOf(resultingPlayer);
-        playerInRoom.splice(foundIdx, 1);
-      }  
-      socket.emit('disconnected');
+
+      if(reason === 'ping timeout' || reason === 'transport close' || reason === 'io client disconnect'
+      || reason === 'transport error') {
+        const resultingPlayer = playerInRoom.find(entry => entry.socket.id === item.id);
+        if(resultingPlayer) {
+          
+          const foundIdx = playerInRoom.indexOf(resultingPlayer);
+          playerInRoom.splice(foundIdx, 1);
+
+          // remove from db if needed
+          try{
+            let room = await getRoomInfo({room_id: resultingPlayer.roomId, IsDeleted: false});
+            let deleteRoom;
+            if(resultingPlayer.playerNumber === 1){ 
+              deleteRoom = !room.Player2 ? true : false;
+            }else if (resultingPlayer.playerNumber === 2){
+              deleteRoom = !room.Player1 ? true : false;
+            }
+
+            
+            if(!deleteRoom){
+              room = resultingPlayer.playerNumber === 2 ? 
+              await updateRoomInfo({room_id: roomId.toString(), updatedBy: room.Player2, Player2: null})
+              : await updateRoomInfo({room_id: roomId.toString(), updatedBy: room.Player1, Player1: null});
+              io.emit('one-room-got-updated', await getAllRooms({}));
+            }else {
+              await updateRoomInfo({room_id: roomId.toString(), updatedBy: resultingPlayer.playerNumber === 2 ? room.Player2 : room.Player1, Player1: null, Player2: null, IsDeleted: deleteRoom});
+              room = await deleteExistingRoom({room_id: roomId.toString(), updatedBy: resultingPlayer.playerNumber === 2 ? room.Player2 : room.Player1});
+              io.emit('one-room-got-deleted', await getAllRooms({}));
+            };
+            io.in(roomId.toString()).emit('update-room', room);
+          } catch(e) {
+            console.log(e);
+            io.emit('room-processing-error', e);
+          }
+        }  
+      }
+
+      console.log(playerInRoom);
       
       console.log("client disconnect");
     });
