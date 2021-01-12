@@ -1,5 +1,6 @@
 const Game = require("../models/game-model");
 const Room = require("../models/room-model");
+const User = require("../models/user-model");
 const { getRoomInfo, updateRoomInfo, deleteExistingRoom, getAllRooms } = require("./roomService");
 const ServiceGame = require("./serviceGame");
 
@@ -8,6 +9,10 @@ const timePerTurn = 30;
 const allClients = [];
 
 let playerInRoom = [];
+
+const allUserIds = {};
+
+const allUsersOnline = {};
 
 module.exports = function (io) {
   io.on("connection", (socket) => {
@@ -22,6 +27,39 @@ module.exports = function (io) {
       io.in((game.roomId).toString()).emit(message, game);
       const room = await getRoomInfo({ room_id: game.roomId });
       io.in((room._id).toString()).emit("update-room", room);
+    }
+
+    const handleLogin = async (socket, userId) => {
+      allUserIds[(socket.id).toString()] = userId;
+      const user = await User.findById(userId);
+
+      const savedInfo = {
+        profileImage: user.profileImage,
+        username: user.username,
+      }
+      allUsersOnline[userId.toString()] = savedInfo;
+
+      console.log(allUsersOnline);
+
+      io.emit("update-online-list", allUsersOnline);
+    }
+
+    const handleLogout = (socket) => {
+
+      if (socket) {
+        const userId = allUserIds[(socket.id).toString()];
+
+        if (userId) {
+          delete allUsersOnline[userId.toString()];
+          io.emit("update-online-list", allUsersOnline);
+        }
+      }
+    
+      
+      
+
+      
+      
     }
 
     let countdown = timePerTurn;
@@ -157,16 +195,30 @@ module.exports = function (io) {
       }
     });
 
-    socket.on("disconnect", (reason) => {
+    socket.on('login', async (userId) => {
+      console.log("on login: " + userId);
+      await handleLogin(socket, userId);
+    });
+
+    socket.on('logout', () => {
+      console.log("on logout");
+      handleLogout(socket);
+    });
+
+    socket.on("disconnect", async (reason) => {
       const i = allClients.indexOf(socket);
       const item = allClients.splice(i, 1);
+
+      handleLogout(socket);
       
       const resultingPlayer = playerInRoom.find(entry => entry.socket.id === item.id);
       if(resultingPlayer) {
         const foundIdx = playerInRoom.indexOf(resultingPlayer);
         playerInRoom.splice(foundIdx, 1);
-      }  
+      };
       socket.emit('disconnected');
+
+      handleLogout(socket);
       
       console.log("client disconnect");
     });
