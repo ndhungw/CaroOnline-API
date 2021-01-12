@@ -7,6 +7,17 @@ const timePerTurn = 30;
 
 module.exports = function (io) {
   io.on("connection", (socket) => {
+    console.log("a new client");
+
+    //SUPPORTING FUNCTION
+    const declareWinner = async (game, message) => {
+      console.log(game);
+      const result = await ServiceGame.calculateGameScore(game);
+      console.log(result);
+      io.in((game.roomId).toString()).emit(message, game);
+      const room = await getRoomInfo({ room_id: game.roomId });
+      io.in((room._id).toString()).emit("update-room", room);
+    }
 
     let countdown = timePerTurn;
 
@@ -18,7 +29,7 @@ module.exports = function (io) {
 
     const startCountdown = (roomId, gameId) => {
 
-      timer = setInterval(async function() {
+      timer = setInterval(async function () {
         countdown--;
         io.in((roomId).toString()).emit('countdown', countdown);
 
@@ -27,11 +38,10 @@ module.exports = function (io) {
 
           newGame.winner = 3 - newGame.playerMoveNext;
           await newGame.save();
-          
-          io.in((roomId).toString()).emit('timeout', newGame);
+          await declareWinner(newGame, 'timeout');
           clearInterval(timer);
         }
-      },1000);
+      }, 1000);
     }
 
     const resetCountdown = () => {
@@ -39,18 +49,18 @@ module.exports = function (io) {
 
     }
 
-    const stopCoundown = () => {
+    const stopCountdown = () => {
       clearInterval(timer);
     }
 
-    console.log("a new client");
 
 
-    socket.on("new-game", async({gameId}) => {
+    socket.on("new-game", async ({ gameId }) => {
       const game = await Game.findById(gameId);
 
       socket.to(game.roomId.toString()).emit("update-new-game", game);
 
+      stopCountdown();
       setCountdown(timePerTurn);
       startCountdown(game.roomId, game._id);
     })
@@ -63,15 +73,17 @@ module.exports = function (io) {
       const result = await ServiceGame.calculateWinner(game, position);
       if (result) {
         console.log("emit winner-found");
+
         
-        stopCoundown();
         result.highlight.map(e => {
           game.winHighlight.push(e);
         });
         game.winner = player;
         await game.save();
 
-        io.emit("winner-found", game);
+        await declareWinner(game, "winner-found")
+        stopCountdown();
+
       }
       else {
         console.log("emit update-board");
@@ -79,6 +91,7 @@ module.exports = function (io) {
         await game.save();
 
         io.in(game.roomId.toString()).emit("update-board", game);
+
       }
     });
 
@@ -87,11 +100,11 @@ module.exports = function (io) {
       socket.join(page);
     });
 
-    socket.on('join-room', async({roomId}) => {
+    socket.on('join-room', async ({ roomId }) => {
       console.log("on join-room");
       socket.join(roomId.toString());
-      
-      const room = await getRoomInfo({room_id: roomId});
+
+      const room = await getRoomInfo({ room_id: roomId });
       io.in(roomId.toString()).emit("update-room", room);
     })
 

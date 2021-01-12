@@ -71,6 +71,31 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+
+    trophies: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
+
+    gamesPlayed: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
+
+    gamesWon: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
+
+    gamesLost: {
+      type: Number,
+      default: 0,
+      required: true,
+    }
+
   },
   { timestamps: true }
 );
