@@ -171,7 +171,7 @@ module.exports = function (io) {
 
     socket.on("disconnect", async (reason) => {
       const i = allClients.indexOf(socket);
-      const item = allClients.splice(i, 1);
+      const item = allClients.splice(i, 1)[0];
 
       if(reason === 'ping timeout' || reason === 'transport close' || reason === 'io client disconnect'
       || reason === 'transport error') {
@@ -191,15 +191,15 @@ module.exports = function (io) {
 
             if(!deleteRoom){
               room = resultingPlayer.playerNumber === 2 ? 
-              await updateRoomInfo({room_id: roomId.toString(), updatedBy: room.Player2, Player2: null})
-              : await updateRoomInfo({room_id: roomId.toString(), updatedBy: room.Player1, Player1: null});
+              await updateRoomInfo({room_id: room._id.toString(), updatedBy: room.Player2, Player2: null})
+              : await updateRoomInfo({room_id: room._id.toString(), updatedBy: room.Player1, Player1: null});
               io.emit('one-room-got-updated', await getAllRooms({}));
             }else {
-              await updateRoomInfo({room_id: roomId.toString(), updatedBy: resultingPlayer.playerNumber === 2 ? room.Player2 : room.Player1, Player1: null, Player2: null, IsDeleted: deleteRoom});
-              room = await deleteExistingRoom({room_id: roomId.toString(), updatedBy: resultingPlayer.playerNumber === 2 ? room.Player2 : room.Player1});
+              await updateRoomInfo({room_id: room._id.toString(), updatedBy: resultingPlayer.playerNumber === 2 ? room.Player2 : room.Player1, Player1: null, Player2: null, IsDeleted: deleteRoom});
+              room = await deleteExistingRoom({room_id: room._id.toString(), updatedBy: resultingPlayer.playerNumber === 2 ? room.Player2 : room.Player1});
               io.emit('one-room-got-deleted', await getAllRooms({}));
             };
-            io.in(roomId.toString()).emit('update-room', room);
+            io.in(room._id.toString()).emit('update-room', room);
           } catch(e) {
             console.log(e);
             io.emit('room-processing-error', e);
