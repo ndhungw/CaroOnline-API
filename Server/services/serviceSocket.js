@@ -214,4 +214,5 @@ module.exports = function (io) {
       
       console.log("client disconnect");
     });
-};
+  });
+}
