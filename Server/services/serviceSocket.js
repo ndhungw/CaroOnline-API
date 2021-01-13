@@ -202,7 +202,7 @@ module.exports = function (io) {
         console.log(e);
         io.emit('room-processing-error', e);
       }
-    );
+    });
 
     socket.on("login", async (userId) => {
       console.log("on login: " + userId);
