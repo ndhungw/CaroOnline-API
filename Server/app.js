@@ -19,6 +19,7 @@ const authRouter = require("./routes/auth");
 const testRouter = require("./routes/test");
 const roomRouter = require("./routes/room")(app);
 const gameRouter = require("./routes/game");
+const gameRecordsRouter = require("./routes/game-records");
 
 // const io = require("socket.io")(app.listen());
 
@@ -40,9 +41,8 @@ const authenticate = require("./middlewares/authenticate");
 app.use("/", indexRouter);
 app.use("/api/auth", authRouter);
 app.use("/test", testRouter);
-app.use("/game", gameRouter);
-
-
+app.use("/game", gameRouter); //TODO: game -> games
+app.use("/game-records", gameRecordsRouter);
 
 app.use("/api/users", authenticate, usersRouter);
 app.use("/api/room-management", roomRouter);

@@ -1,10 +1,20 @@
 const Chat = require("../models/chat-model");
 const Game = require("../models/game-model");
 const Room = require("../models/room-model");
-const { getRoomInfo, updateRoomInfo, deleteExistingRoom, getAllRooms } = require("./roomService");
+const User = require("../models/user-model");
+const {
+  getRoomInfo,
+  updateRoomInfo,
+  deleteExistingRoom,
+  getAllRooms,
+} = require("./roomService");
 const ServiceGame = require("./serviceGame");
 
 const timePerTurn = 30;
+
+const allUserIds = {};
+
+const allUsersOnline = {};
 
 module.exports = function (io) {
   io.on("connection", (socket) => {
@@ -16,10 +26,36 @@ module.exports = function (io) {
       console.log(game);
       const result = await ServiceGame.calculateGameScore(game);
       console.log(result);
-      io.in((game.roomId).toString()).emit(message, game);
+      io.in(game.roomId.toString()).emit(message, game);
       const room = await getRoomInfo({ room_id: game.roomId });
-      io.in((room._id).toString()).emit("update-room", room);
-    }
+      io.in(room._id.toString()).emit("update-room", room);
+    };
+
+    const handleLogin = async (socket, userId) => {
+      allUserIds[socket.id.toString()] = userId;
+      const user = await User.findById(userId);
+
+      const savedInfo = {
+        profileImage: user.profileImage,
+        username: user.username,
+      };
+      allUsersOnline[userId.toString()] = savedInfo;
+
+      console.log(allUsersOnline);
+
+      io.emit("update-online-list", allUsersOnline);
+    };
+
+    const handleLogout = (socket) => {
+      if (socket) {
+        const userId = allUserIds[socket.id.toString()];
+
+        if (userId) {
+          delete allUsersOnline[userId.toString()];
+          io.emit("update-online-list", allUsersOnline);
+        }
+      }
+    };
 
     let countdown = timePerTurn;
 
@@ -27,35 +63,31 @@ module.exports = function (io) {
 
     const setCountdown = (seconds) => {
       countdown = seconds;
-    }
+    };
 
     const startCountdown = (roomId, gameId) => {
-
       timer = setInterval(async function () {
         countdown--;
-        io.in((roomId).toString()).emit('countdown', countdown);
+        io.in(roomId.toString()).emit("countdown", countdown);
 
         if (countdown === 0) {
           const newGame = await Game.findById(gameId);
 
           newGame.winner = 3 - newGame.playerMoveNext;
           await newGame.save();
-          await declareWinner(newGame, 'timeout');
+          await declareWinner(newGame, "timeout");
           clearInterval(timer);
         }
       }, 1000);
-    }
+    };
 
     const resetCountdown = () => {
       countdown = timePerTurn;
-
-    }
+    };
 
     const stopCountdown = () => {
       clearInterval(timer);
-    }
-
-
+    };
 
     socket.on("new-game", async ({ gameId }) => {
       const game = await Game.findById(gameId);
@@ -65,7 +97,7 @@ module.exports = function (io) {
       stopCountdown();
       setCountdown(timePerTurn);
       startCountdown(game.roomId, game._id);
-    })
+    });
 
     socket.on("make-move", async ({ gameId, player, position }) => {
       const game = await Game.findById(gameId);
@@ -76,33 +108,29 @@ module.exports = function (io) {
       if (result) {
         console.log("emit winner-found");
 
-        
-        result.highlight.map(e => {
+        result.highlight.map((e) => {
           game.winHighlight.push(e);
         });
         game.winner = player;
         await game.save();
 
-        await declareWinner(game, "winner-found")
+        await declareWinner(game, "winner-found");
         stopCountdown();
-
-      }
-      else {
+      } else {
         console.log("emit update-board");
         game.playerMoveNext = 3 - game.playerMoveNext;
         await game.save();
 
         io.in(game.roomId.toString()).emit("update-board", game);
-
       }
     });
 
     //Subcribe to rooms representing pages the user is in
-    socket.on('page-status', (page) => {
+    socket.on("page-status", (page) => {
       socket.join(page);
     });
 
-    socket.on('join-room', async({roomId, playerId, playerNumber}) => {
+    socket.on("join-room", async ({ roomId, playerId, playerNumber }) => {
       console.log("on join-room");
       socket.join(roomId.toString());
       
@@ -122,8 +150,8 @@ module.exports = function (io) {
       
     });
 
-    socket.on("send-chat-message", async({roomId, message, username}) => {
-      let chat = await Chat.findOne({roomId: roomId});
+    socket.on("send-chat-message", async ({ roomId, message, username }) => {
+      let chat = await Chat.findOne({ roomId: roomId });
 
       if (!chat) {
         chat = await Chat.createNew(roomId);
@@ -132,7 +160,7 @@ module.exports = function (io) {
       chat.messages.push({
         username: username,
         message: message,
-      })
+      });
 
       await chat.save();
 
@@ -174,6 +202,11 @@ module.exports = function (io) {
         console.log(e);
         io.emit('room-processing-error', e);
       }
+    );
+
+    socket.on("login", async (userId) => {
+      console.log("on login: " + userId);
+      await handleLogin(socket, userId);
     });
 
     socket.on("disconnect", async (reason) => {
@@ -217,4 +250,4 @@ module.exports = function (io) {
       console.log("client disconnect");
     });
   });
-}
+};
