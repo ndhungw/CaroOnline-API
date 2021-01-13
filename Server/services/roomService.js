@@ -130,7 +130,7 @@ module.exports.getRoomInfo = async({room_id, IsDeleted}) => {
         throw exception;
     }
 
-    await roomInfo.populate("Player1", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).populate("Player2", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).execPopulate();
+    await roomInfo.populate("Player1", ["username", "trophies", "gamesWon", "gamesLost"]).populate("Player2", ["username", "trophies", "gamesWon", "gamesLost"]).execPopulate();
 
     await roomInfo.populate("CreatedBy").populate("UpdatedBy").populate("RoomType").execPopulate();
     return roomInfo;
