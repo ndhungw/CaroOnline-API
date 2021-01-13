@@ -6,9 +6,10 @@ const Room = require("../models/room-model");
 const GameController = {};
 
 GameController.create = async (req, res) => {
+  const room = await Room.findById(req.body.roomId);
   try {
     const game = await ServiceGame.createNewGame({
-      roomId: req.body.roomId,
+      room: room,
       maxCol: req.body.maxCol,
       maxRow: req.body.maxRow,
       winCondition: req.body.winCondition,
@@ -64,9 +65,13 @@ GameController.getAllGameRecords = async (req, res) => {
     };
   });
 
+
+
   res.status(200).json({
     gameRecords,
   });
 };
+
+
 
 module.exports = GameController;
