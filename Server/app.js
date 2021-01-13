@@ -12,6 +12,12 @@ const app = express();
 global.playerInRoom = [];
 global.allClients = [];
 
+global.allUserIds = {};
+
+global.allUsersOnline = {};
+
+global.allTimers = {};
+
 // ROUTES
 const indexRouter = require("./routes/index");
 const usersRouter = require("./routes/users");
