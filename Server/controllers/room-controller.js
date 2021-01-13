@@ -86,7 +86,7 @@ module.exports.joinRoom = async(req, res) => {
                 }
 
                 await desiredRoom.save();
-                console.log(desiredRoom);
+                
 
                 // Set all password to undefined to prevent data breach
                 desiredRoom.Password = undefined;
@@ -128,18 +128,49 @@ module.exports.checkJoin = async(req, res, next) => {
 
     try
     {
-        await roomService.checkRoomPassword({room_id: roomId, room_password});
+        await roomService.checkRoomPassword({room_id: roomId.toString(), room_password});
         res.status(200).json({message: "check can join yoooo!"});
     }
     catch(e)
     {
+        console.log(e);
+        console.log(roomId);
         if(e.name && e.name === ROOM_SERVICE_ERROR){
             res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
             return;
         }
-        console.log(e);
         res.status(500).json({message: "Server encountered an internal error, please report to the one responsible for making this server"});
     }   
+}
+
+module.exports.checkInRoom = async (req, res, next) => {
+    const {user} = req;
+
+    try
+    {
+        if(!user){
+            const exception = new Error();
+            exception.name = ROOM_SERVICE_ERROR;
+            exception.message = "Need user id to check";
+            throw exception;
+        }
+        const resultingPlayer = playerInRoom.find(entry => entry.playerId.toString() === user._id.toString());
+        if(resultingPlayer){
+            const room = await roomService.getRoomInfo({room_id: resultingPlayer.roomId, IsDeleted: false});
+            res.status(200).json({data: room});
+        } else {
+            res.status(200).json({data: null});
+        }  
+    }
+    catch(e)
+    {
+        console.log(e);
+        if(e.name && e.name === ROOM_SERVICE_ERROR){
+            res.status(400).json({message: "Server encountered an exception while processing your request", data: e});
+            return;
+        }
+        res.status(500).json({message: "Server encountered an internal error, please report to the one responsible for making this server"});
+    } 
 }
 
 module.exports.updateRoomInfo = async(req, res, next) => {

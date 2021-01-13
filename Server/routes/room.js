@@ -24,5 +24,8 @@ module.exports = function(app){
     //CHECK PASSWORD
     router.post("/room/check-can-join/:roomId", authenticate, roomController.checkJoin);
 
+    //CHECK IS IN ROOm
+    router.post("/room/check-is-in-room", authenticate, roomController.checkInRoom);
+
     return router;
 }
