@@ -78,12 +78,6 @@ const UserSchema = new mongoose.Schema(
       required: true,
     },
 
-    gamesPlayed: {
-      type: Number,
-      default: 0,
-      required: true,
-    },
-
     gamesWon: {
       type: Number,
       default: 0,

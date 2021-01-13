@@ -13,9 +13,7 @@ const ServiceGame = require("./serviceGame");
 
 const timePerTurn = 30;
 
-const allUserIds = {};
 
-const allUsersOnline = {};
 
 module.exports = function (io) {
   io.on("connection", (socket) => {
@@ -24,6 +22,8 @@ module.exports = function (io) {
 
     //SUPPORTING FUNCTION
     const declareWinner = async (game, message) => {
+      stopCountdown(game.roomId);
+      resetCountdown(game.roomId);
       console.log(game);
       const result = await ServiceGame.calculateGameScore(game);
       console.log(result);
@@ -82,36 +82,57 @@ module.exports = function (io) {
       }
     };
 
-    let countdown = timePerTurn;
+    const intervalCountdown = async (roomId, gameId) => {
+      allTimers[roomId.toString()].countdown--;
 
-    let timer;
+      const countdown = allTimers[roomId.toString()].countdown;
+      io.in(roomId.toString()).emit("countdown", countdown);
 
-    const setCountdown = (seconds) => {
-      countdown = seconds;
-    };
+      if (countdown === 0) {
+        const newGame = await Game.findById(gameId);
+
+        newGame.winner = 3 - newGame.playerMoveNext;
+        await newGame.save();
+        await declareWinner(newGame, "timeout");
+        console.log(countdown);
+      }
+
+      console.log(countdown);
+    }
 
     const startCountdown = (roomId, gameId) => {
-      timer = setInterval(async function () {
-        countdown--;
-        io.in(roomId.toString()).emit("countdown", countdown);
+      console.log("start countdown");
 
-        if (countdown === 0) {
-          const newGame = await Game.findById(gameId);
+      if (!allTimers[roomId.toString()]) {
+        allTimers[roomId.toString()] = {};
+      }
+      allTimers[roomId.toString()].countdown = timePerTurn;
 
-          newGame.winner = 3 - newGame.playerMoveNext;
-          await newGame.save();
-          await declareWinner(newGame, "timeout");
-          clearInterval(timer);
-        }
+      allTimers[roomId.toString()].timer = setInterval(function () {
+        intervalCountdown(roomId, gameId);
+
       }, 1000);
+
+      console.log(allTimers[roomId.toString()]);
+
     };
 
-    const resetCountdown = () => {
-      countdown = timePerTurn;
+    const resetCountdown = (roomId) => {
+
+      if (allTimers[roomId.toString()]) {
+        console.log("reset countdown");
+        allTimers[roomId.toString()].countdown = timePerTurn;
+      }
+      
     };
 
-    const stopCountdown = () => {
-      clearInterval(timer);
+    const stopCountdown = (roomId) => {
+      console.log("stop countdown");
+      if (allTimers[roomId.toString()]) {
+        clearInterval(allTimers[roomId.toString()].timer);
+      }
+
+
     };
 
     socket.on("new-game", async ({ gameId }) => {
@@ -119,16 +140,15 @@ module.exports = function (io) {
 
       socket.to(game.roomId.toString()).emit("update-new-game", game);
 
-      stopCountdown();
-      setCountdown(timePerTurn);
+      stopCountdown(game.roomId);
+      resetCountdown(game.roomId);
       startCountdown(game.roomId, game._id);
     });
 
     socket.on("make-move", async ({ gameId, player, position }) => {
       const game = await Game.findById(gameId);
-
+      resetCountdown(game.roomId);
       await ServiceGame.makeMove(game, position);
-      resetCountdown();
       const result = await ServiceGame.calculateWinner(game, position);
       if (result) {
         console.log("emit winner-found");
@@ -140,7 +160,6 @@ module.exports = function (io) {
         await game.save();
 
         await declareWinner(game, "winner-found");
-        stopCountdown();
       } else {
         console.log("emit update-board");
         game.playerMoveNext = 3 - game.playerMoveNext;
@@ -177,11 +196,11 @@ module.exports = function (io) {
       
     });
 
-    socket.on("send-chat-message", async ({ roomId, message, username }) => {
-      let chat = await Chat.findOne({ roomId: roomId });
+    socket.on("send-chat-message", async ({ roomId, gameId, message, username }) => {
+      let chat = await Chat.findOne({ roomId: roomId, gameId: gameId });
 
       if (!chat) {
-        chat = await Chat.createNew(roomId);
+        chat = await Chat.createNew(roomId, gameId);
       }
 
       chat.messages.push({
@@ -234,7 +253,6 @@ module.exports = function (io) {
     });
 
     socket.on("login", async (userId) => {
-      console.log("on login: " + userId);
       await handleLogin(socket, userId);
     });
 
@@ -307,8 +325,8 @@ module.exports = function (io) {
 
       handleLogout(socket);
 
-      if(reason === 'ping timeout' || reason === 'transport close' || reason === 'io client disconnect'
-      || reason === 'transport error') {
+      if (reason === 'ping timeout' || reason === 'transport close' || reason === 'io client disconnect'
+        || reason === 'transport error') {
         const resultingPlayer = playerInRoom.find(entry => entry.socket.id === item.id);
         if(resultingPlayer) {
           (async() => {
