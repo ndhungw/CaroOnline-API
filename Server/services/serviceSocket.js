@@ -83,6 +83,7 @@ module.exports = function (io) {
 
     const resetCountdown = () => {
       countdown = timePerTurn;
+      
     };
 
     const stopCountdown = () => {
@@ -106,6 +107,8 @@ module.exports = function (io) {
       resetCountdown();
       const result = await ServiceGame.calculateWinner(game, position);
       if (result) {
+        stopCountdown();
+        resetCountdown();
         console.log("emit winner-found");
 
         result.highlight.map((e) => {
@@ -115,7 +118,6 @@ module.exports = function (io) {
         await game.save();
 
         await declareWinner(game, "winner-found");
-        stopCountdown();
       } else {
         console.log("emit update-board");
         game.playerMoveNext = 3 - game.playerMoveNext;
