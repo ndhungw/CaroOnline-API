@@ -150,7 +150,6 @@ module.exports = function (io) {
           if(resultingPlayer){
             const foundIdx = playerInRoom.indexOf(resultingPlayer);
             playerInRoom.splice(foundIdx, 1);
-            
 
             let deleteRoom;
             if(playerNumber === 1){ 
@@ -214,7 +213,7 @@ module.exports = function (io) {
           }
         }  
       }
-      
+
       console.log("client disconnect");
     });
   });
