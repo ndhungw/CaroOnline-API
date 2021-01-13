@@ -1,9 +1,15 @@
 const express = require("express");
-const router = express.Router();
 const GameController = require("../controllers/game-controller");
+const router = express.Router();
+const RecordsController = require("../controllers/game-records");
+const authenticate = require("../middlewares/authenticate");
 
 router.get("/", GameController.getAllGameRecords);
 
-router.get('/:id', GameController.getGameRecord);
+router.get("/personal", authenticate, RecordsController.getPersonalRecords)
+
+
+router.get('/:id', RecordsController.getGameRecord);
+
 
 module.exports = router;
