@@ -113,11 +113,11 @@ module.exports = function (io) {
           playerInRoom = [...playerInRoom, {roomId: room._id.toString(), playerId: playerId.toString(), playerNumber, socket}];
         }else { 
           const player_idx = playerInRoom.indexOf(resultingPlayer);
-          resultingPlayer.socket = socket;
-          playerInRoom[player_idx] = resultingPlayer;
-          socket.broadcast.to(roomId.toString()).emit('disconnect-other-tabs', {player: playerNumber, roomId: room._id.toString()});
+          playerInRoom[player_idx].socket = socket;
+          socket.broadcast.to(roomId.toString()).emit('disconnect-other-tabs', {player: playerNumber, roomId: room._id.toString(), socketIdNot: socket.id});
         }
       }
+      
       io.in(roomId.toString()).emit("update-room", room);
       
     });
@@ -139,17 +139,25 @@ module.exports = function (io) {
       io.in(roomId.toString()).emit("update-chat", chat);
     })
 
-    socket.on('leave-room', async({roomId, playerNumber, player, deleteRoom}) => {
+    socket.on('leave-room', async({roomId, playerNumber, player}) => {
       console.log('someone left the room: ', roomId.toString());
       socket.leave(roomId.toString());
 
       try{
         if((playerNumber === 1 || playerNumber === 2) && roomId && player){
+          let room = await getRoomInfo({room_id: roomId.toString(), IsDeleted: false});
           const resultingPlayer = playerInRoom.find(entry => entry.roomId === roomId.toString() && entry.playerId === player._id.toString());
           if(resultingPlayer){
             const foundIdx = playerInRoom.indexOf(resultingPlayer);
             playerInRoom.splice(foundIdx, 1);
-            let room; 
+            
+
+            let deleteRoom;
+            if(playerNumber === 1){ 
+              deleteRoom = !room.Player2 ? true : false;
+            }else if (playerNumber === 2){
+              deleteRoom = !room.Player1 ? true : false;
+            }
             if(!deleteRoom){
               room = playerNumber === 2 ? 
               await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player2: null})
