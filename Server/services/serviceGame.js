@@ -19,10 +19,10 @@ const ServiceGame = {
   },
 
   async createNewGame({ roomId, maxCol, maxRow, winCondition }) {
-    const room = await (await roomService.getRoomInfo({ room_id: roomId }));
+    const room = await Room.findById(roomId);
 
     const firstTurn = ((room.PlayedGames.length) % 2) + 1;
-    const game = await games.createNewGame({ roomId, maxCol, maxRow, firstTurn, winCondition });
+    const game = await games.createNewGame({ room, maxCol, maxRow, firstTurn, winCondition });
 
 
     room.CurrentGame = game._id;
