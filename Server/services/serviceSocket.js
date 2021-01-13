@@ -99,7 +99,7 @@ module.exports = function (io) {
 
     socket.on("make-move", async ({ gameId, player, position }) => {
       const game = await Game.findById(gameId);
-
+      resetCountdown();
       await ServiceGame.makeMove(game, position);
       resetCountdown();
       const result = await ServiceGame.calculateWinner(game, position);
@@ -202,7 +202,6 @@ module.exports = function (io) {
     });
 
     socket.on("login", async (userId) => {
-      console.log("on login: " + userId);
       await handleLogin(socket, userId);
     });
 

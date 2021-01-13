@@ -3,6 +3,7 @@ const roomService = require("../services/roomService");
 const { ROOM_SERVICE_ERROR } = require("../constants/constants");
 const ServiceGame = require("../services/serviceGame");
 const Room = require("../models/room-model");
+const Chat = require("../models/chat-model");
 const GameController = {};
 
 GameController.create = async (req, res) => {
@@ -69,4 +70,23 @@ GameController.getAllGameRecords = async (req, res) => {
   });
 };
 
+GameController.getGameRecord = async (req, res) => {
+  const { id } = req.params;
+
+  console.log(id);
+  const game = await Game.findById(id);
+
+  if (game) {
+    await game.populate("player1").populate("player2").execPopulate();
+
+    const chat = await Chat.findOne({roomId: game.roomId});
+
+    res.status(200).json({game:game, chat:chat});
+  }
+  else {
+    res.status(500).json({message: "can't find game record with this id"});
+  }
+
+
+}
 module.exports = GameController;
