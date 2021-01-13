@@ -209,9 +209,15 @@ module.exports = function (io) {
       await handleLogin(socket, userId);
     });
 
+    socket.on("logout", async () => {
+      handleLogout(socket)
+    })
+
     socket.on("disconnect", async (reason) => {
       const i = allClients.indexOf(socket);
       const item = allClients.splice(i, 1)[0];
+
+      handleLogout();
 
       if(reason === 'ping timeout' || reason === 'transport close' || reason === 'io client disconnect'
       || reason === 'transport error') {
