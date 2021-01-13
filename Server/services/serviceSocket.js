@@ -23,6 +23,8 @@ module.exports = function (io) {
 
     //SUPPORTING FUNCTION
     const declareWinner = async (game, message) => {
+      stopCountdown();
+      resetCountdown();
       console.log(game);
       const result = await ServiceGame.calculateGameScore(game);
       console.log(result);
@@ -61,10 +63,6 @@ module.exports = function (io) {
 
     let timer;
 
-    const setCountdown = (seconds) => {
-      countdown = seconds;
-    };
-
     const startCountdown = (roomId, gameId) => {
       timer = setInterval(async function () {
         countdown--;
@@ -76,7 +74,6 @@ module.exports = function (io) {
           newGame.winner = 3 - newGame.playerMoveNext;
           await newGame.save();
           await declareWinner(newGame, "timeout");
-          clearInterval(timer);
         }
       }, 1000);
     };
@@ -96,7 +93,7 @@ module.exports = function (io) {
       socket.to(game.roomId.toString()).emit("update-new-game", game);
 
       stopCountdown();
-      setCountdown(timePerTurn);
+      resetCountdown();
       startCountdown(game.roomId, game._id);
     });
 
@@ -107,8 +104,6 @@ module.exports = function (io) {
       resetCountdown();
       const result = await ServiceGame.calculateWinner(game, position);
       if (result) {
-        stopCountdown();
-        resetCountdown();
         console.log("emit winner-found");
 
         result.highlight.map((e) => {

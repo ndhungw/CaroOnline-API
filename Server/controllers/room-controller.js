@@ -97,7 +97,7 @@ module.exports.joinRoom = async(req, res) => {
             }
         }
 
-        await desiredRoom.populate("Player1", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).populate("Player2", ["username", "trophies", "gamesPlayed", "gamesWon", "gamesLost"]).execPopulate();
+        await desiredRoom.populate("Player1", ["username", "trophies", "gamesWon", "gamesLost"]).populate("Player2", ["username", "trophies", "gamesWon", "gamesLost"]).execPopulate();
 
         let currentGame = null;
         if (desiredRoom.CurrentGame) {
