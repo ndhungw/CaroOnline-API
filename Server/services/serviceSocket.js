@@ -24,11 +24,10 @@ module.exports = function (io) {
     const declareWinner = async (game, message) => {
       stopCountdown(game.roomId);
       resetCountdown(game.roomId);
-      console.log(game);
       const result = await ServiceGame.calculateGameScore(game);
       console.log(result);
       io.in(game.roomId.toString()).emit(message, game);
-      const room = await getRoomInfo({ room_id: game.roomId });
+      const room = await getRoomInfo({ room_id: game.roomId});
       io.in(room._id.toString()).emit("update-room", room);
     };
 
@@ -179,19 +178,24 @@ module.exports = function (io) {
       socket.join(roomId.toString());
       
       (async() => {
-        const room = await getRoomInfo({room_id: roomId, IsDeleted: false});
-        if(playerNumber && room){
-          const resultingPlayer = playerInRoom.find(entry => entry.roomId === room._id.toString() && entry.playerId === playerId.toString());
-          if(!resultingPlayer){
-            playerInRoom = [...playerInRoom, {roomId: room._id.toString(), playerId: playerId.toString(), playerNumber, socket}];
-          }else { 
-            const player_idx = playerInRoom.indexOf(resultingPlayer);
-            playerInRoom[player_idx].socket = socket;
-            socket.broadcast.to(roomId.toString()).emit('disconnect-other-tabs', {player: playerNumber, roomId: room._id.toString(), socketIdNot: socket.id});
+        try{
+          const room = await getRoomInfo({room_id: roomId, IsDeleted: false});
+          if(playerNumber && room){
+            const resultingPlayer = playerInRoom.find(entry => entry.roomId === room._id.toString() && entry.playerId === playerId.toString());
+            if(!resultingPlayer){
+              playerInRoom = [...playerInRoom, {roomId: room._id.toString(), playerId: playerId.toString(), playerNumber, socket}];
+            }else { 
+              const player_idx = playerInRoom.indexOf(resultingPlayer);
+              playerInRoom[player_idx].socket = socket;
+              socket.broadcast.to(roomId.toString()).emit('disconnect-other-tabs', {player: playerNumber, roomId: room._id.toString(), socketIdNot: socket.id});
+            }
           }
+          
+          io.in(roomId.toString()).emit("update-room", room);
+        } catch(e) {
+          console.log(e);
+          io.emit('room-processing-error', e);
         }
-        
-        io.in(roomId.toString()).emit("update-room", room);
       })();
       
     });
@@ -215,34 +219,42 @@ module.exports = function (io) {
 
     socket.on('leave-room', ({roomId, playerNumber, player}) => {
       console.log('someone left the room: ', roomId.toString());
+      console.log('player Number:', playerNumber, ' playerInfo:', player, ' has left room');
       socket.leave(roomId.toString());
 
       try{
         if((playerNumber === 1 || playerNumber === 2) && roomId && player){
           (async() => {
-            let room = await getRoomInfo({room_id: roomId.toString(), IsDeleted: false});
-            const resultingPlayer = playerInRoom.find(entry => entry.roomId === roomId.toString() && entry.playerId === player._id.toString());
-            if(resultingPlayer){
-              const foundIdx = playerInRoom.indexOf(resultingPlayer);
-              playerInRoom.splice(foundIdx, 1);
+            try{
+              let room = await getRoomInfo({room_id: roomId.toString(), IsDeleted: false});
+              const resultingPlayer = playerInRoom.find(entry => entry.roomId === roomId.toString() && entry.playerId === player._id.toString());
+              if(resultingPlayer){
+                const foundIdx = playerInRoom.indexOf(resultingPlayer);
+                playerInRoom.splice(foundIdx, 1);
 
-              let deleteRoom;
-              if(playerNumber === 1){ 
-                deleteRoom = !room.Player2 ? true : false;
-              }else if (playerNumber === 2){
-                deleteRoom = !room.Player1 ? true : false;
+                let deleteRoom;
+                if(playerNumber === 1){ 
+                  deleteRoom = !room.Player2 ? true : false;
+                }else if (playerNumber === 2){
+                  deleteRoom = !room.Player1 ? true : false;
+                }
+
+                //get currentGame of the room and update it
+                if(!deleteRoom){
+                  room = playerNumber === 2 ? 
+                  await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player2: null})
+                  : await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player1: null});
+                  io.emit('one-room-got-updated', await getAllRooms({}));
+                }else {
+                  await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player1: null, Player2: null, IsDeleted: deleteRoom});
+                  room = await deleteExistingRoom({room_id: roomId.toString(), updatedBy: player});
+                  io.emit('one-room-got-deleted', await getAllRooms({}));
+                };
+                io.in(roomId.toString()).emit('update-room', room);   
               }
-              if(!deleteRoom){
-                room = playerNumber === 2 ? 
-                await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player2: null})
-                : await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player1: null});
-                io.emit('one-room-got-updated', await getAllRooms({}));
-              }else {
-                await updateRoomInfo({room_id: roomId.toString(), updatedBy: player, Player1: null, Player2: null, IsDeleted: deleteRoom});
-                room = await deleteExistingRoom({room_id: roomId.toString(), updatedBy: player});
-                io.emit('one-room-got-deleted', await getAllRooms({}));
-              };
-              io.in(roomId.toString()).emit('update-room', room);   
+            } catch (e) {
+              console.log(e);
+              io.emit('room-processing-error', e);
             }
           })();
         }  
@@ -300,20 +312,25 @@ module.exports = function (io) {
 
           //Async create room
           (async() => {
-            const user1 = await User.findById(value1);
-            const user2 = await User.findById(value2);
-            
-            const creatingUser = parseInt(Math.floor(Math.random() * (2 - 1 + 1) + 1));
-            
-            let newRoom = await AddNewRoom({room_name: 'Cùng chơi nào~~~~', room_type: 1, createdBy: creatingUser === 1 ? user1 : user2});
-            newRoom = await updateRoomInfo({room_id: (newRoom[0]._id).toString(), updatedBy: creatingUser === 1 ? user1 : user2, Player1: user1, Player2: user2});
-            
-            console.log('two person exited create room queue', createRoomQueue);
+            try{
+              const user1 = await User.findById(value1);
+              const user2 = await User.findById(value2);
+              
+              const creatingUser = parseInt(Math.floor(Math.random() * (2 - 1 + 1) + 1));
+              
+              let newRoom = await AddNewRoom({room_name: 'Cùng chơi nào~~~~', room_type: 1, createdBy: creatingUser === 1 ? user1 : user2});
+              newRoom = await updateRoomInfo({room_id: (newRoom[0]._id).toString(), updatedBy: creatingUser === 1 ? user1 : user2, Player1: user1, Player2: user2});
+              
+              console.log('two person exited create room queue', createRoomQueue);
 
-            io.emit('one-room-got-updated', await getAllRooms({}));
+              io.emit('one-room-got-updated', await getAllRooms({}));
 
-            io.to('ping instances of user ' + user1._id.toString()).emit('room-create-success', {yourRoom: newRoom});
-            io.to('ping instances of user ' + user2._id.toString()).emit('room-create-success', {yourRoom: newRoom});
+              io.to('ping instances of user ' + user1._id.toString()).emit('room-create-success', {yourRoom: newRoom});
+              io.to('ping instances of user ' + user2._id.toString()).emit('room-create-success', {yourRoom: newRoom});
+            }catch(e) {
+              console.log(e);
+              io.emit('room-processing-error', e);
+            }
           })();
         }
       }
