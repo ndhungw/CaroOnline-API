@@ -111,7 +111,7 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
     for(const item of fetchedDocuments){
         await item.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
     }
-    return {rooms: fetchedDocuments, totalPages: currentAmountOfRoomPagesInDatabase};
+    return {rooms: fetchedDocuments, totalPages: Math.max(1,currentAmountOfRoomPagesInDatabase)};
 }
 
 module.exports.getRoomInfo = async({room_id, IsDeleted}) => {

@@ -11,6 +11,8 @@ require("./config/database");
 const app = express();
 global.playerInRoom = [];
 global.allClients = [];
+global.matchMakingQueue = [];
+global.createRoomQueue = [];
 
 // ROUTES
 const indexRouter = require("./routes/index");
@@ -37,6 +39,7 @@ passport.use(jwtStrategy);
 
 // ROUTING
 const authenticate = require("./middlewares/authenticate");
+const { globalAgent } = require("http");
 
 app.use("/", indexRouter);
 app.use("/api/auth", authRouter);
