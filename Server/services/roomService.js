@@ -93,6 +93,9 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
     // if no provide item per page, we get all
     if(!item_per_page || !page_number){
         const rooms = await Room.find({IsDeleted: false}).exec();
+        for(const item of rooms){
+            await item.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
+        }
         return {rooms, totalPages: 1};
     }
     // Otherwise, we get the page
@@ -105,6 +108,9 @@ module.exports.getAllRooms = async({page_number, item_per_page}) => {
         throw exception;
     }
     const fetchedDocuments = await Room.find({IsDeleted: false}).skip((page_number-1)*item_per_page).limit(item_per_page).exec();
+    for(const item of fetchedDocuments){
+        await item.populate("CreatedBy").populate("UpdatedBy").populate("Player1").populate("Player2").populate("RoomType").execPopulate();
+    }
     return {rooms: fetchedDocuments, totalPages: currentAmountOfRoomPagesInDatabase};
 }
 
@@ -157,12 +163,6 @@ module.exports.checkRoomPassword = async ({room_id, room_password}) => {
             const exception = new Error();
             exception.name = ROOM_SERVICE_ERROR;
             exception.message = "Password doesn't match!!";
-            throw exception;
-        }
-        if(roomInfo.Player1 && roomInfo.Player2){
-            const exception = new Error();
-            exception.name = ROOM_SERVICE_ERROR;
-            exception.message = "Private room is full, cannot join";
             throw exception;
         }
     }
