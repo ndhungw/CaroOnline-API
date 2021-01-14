@@ -31,8 +31,9 @@ authController.register = async (req, res) => {
       // Attempt to send activation email
       const link =
         "http://" +
-        req.headers.host +
-        "/api/auth/activate/" /* change this part to 'a link of front end' which will render an ACTIVATION VIEW */ +
+        // req.headers.host +
+        process.env.FRONTEND_DOMAIN +
+        "/activate/" /* change this part to 'a link of front end' which will render an ACTIVATION VIEW */ +
         newUser.activationToken;
       const mailOptions = {
         to: newUser.email,
