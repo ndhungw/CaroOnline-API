@@ -14,7 +14,7 @@ RecordsController.getGameRecord = async (req, res, next) => {
   if (game) {
     await game.populate("player1").populate("player2").execPopulate();
 
-    const chat = await Chat.findOne({ roomId: game.roomId, gameId: game._id });
+    const chat = await Chat.findOne({ roomId: game.roomId});
 
     res.status(200).json({ game: game, chat: chat });
   } else {

@@ -200,11 +200,11 @@ module.exports = function (io) {
       
     });
 
-    socket.on("send-chat-message", async ({ roomId, gameId, message, username }) => {
-      let chat = await Chat.findOne({ roomId: roomId, gameId: gameId });
+    socket.on("send-chat-message", async ({ roomId, message, username }) => {
+      let chat = await Chat.findOne({ roomId: roomId});
 
       if (!chat) {
-        chat = await Chat.createNew(roomId, gameId);
+        chat = await Chat.createNew(roomId);
       }
 
       chat.messages.push({

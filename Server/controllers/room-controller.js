@@ -102,6 +102,7 @@ module.exports.joinRoom = async(req, res) => {
         let currentGame = null;
         if (desiredRoom.CurrentGame) {
             currentGame = await Game.findById(desiredRoom.CurrentGame);
+            await currentGame.populate('player1').populate('player2').execPopulate();
         }
 
         res.status(200).json({
