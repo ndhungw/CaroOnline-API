@@ -2,6 +2,8 @@ const User = require("../models/user-model");
 const authController = {};
 const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const { OAuth2Client } = require("google-auth-library");
+const fetch = require("node-fetch");
 
 /**
  * @route POST api/auth/register
@@ -105,6 +107,120 @@ authController.activate = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+authController.loginWithGoogle = async (req, res) => {
+  const tokenId = req.body.tokenId;
+  console.log("tokenId", tokenId);
+  const client = new OAuth2Client(process.env.GOOGLE_APIS);
+
+  try {
+    const result = await client.verifyIdToken({
+      idToken: tokenId,
+      audience: process.env.GOOGLE_APIS,
+    });
+
+    if (result.payload.email_verified) {
+      const newName = "gg_" + result.payload.email.split("@")[0];
+      const checkUser = await User.findOne({ username: newName });
+
+      if (checkUser) {
+        // exist in database
+        // const user2 = { id: checkUser._id };
+        // const accessToken = await jwt.sign(user2, process.env.JWT_SECRET);
+        const accessToken = await checkUser.generateJWT();
+
+        res.json({
+          token: accessToken,
+          user: checkUser,
+        });
+      } else {
+        const newUser = new User({
+          username: newName,
+          password: "123456",
+          firstName: result.payload.given_name,
+          lastName: result.payload.family_name,
+          email: result.payload.email,
+          // isLocalLogin: false,
+          active: true,
+        });
+
+        const userRespond = await newUser.save();
+        // const user2 = { id: userRespond._id };
+        const accessToken = await userRespond.generateJWT();
+        res.json({
+          token: accessToken,
+          user: userRespond,
+        });
+      }
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+authController.loginWithFacebook = async (req, res) => {
+  const data = req.body;
+  const urlGraphFacebook =
+    "https://graph.facebook.com/v2.11/" +
+    data.userID +
+    "/?fields=id,name,email&access_token=" +
+    data.token;
+
+  try {
+    const respond = await fetch(urlGraphFacebook, {
+      method: "GET",
+    });
+
+    const result = await respond.json();
+    console.log("result", result);
+
+    //-------
+
+    const newUsername = "fb_" + result.email.split("@")[0];
+    const checkUser = await User.findOne({ username: newUsername });
+
+    if (checkUser) {
+      // const user2 = { id: checkUser._id };
+      // const accessToken = await jwt.sign(user2, process.env.ACCESS_TOKEN_KEY);
+      const accessToken = await checkUser.generateJWT();
+      res.json({
+        token: accessToken,
+        user: checkUser,
+      });
+    } else {
+      const name = result.name.split(" ");
+      const lName = name[name.length - 1];
+      name.splice(name.length - 1, 1);
+      const fName = name.join(" ");
+
+      const newUser = new User({
+        username: newUsername,
+        password: "123456",
+        firstName: fName,
+        lastName: lName,
+        email: "facebook:" + result.email,
+        // isLocalLogin: false,
+        active: true,
+      });
+      // const userRespond = await newUser.save();
+      // const user2 = { id: userRespond._id };
+      // const accessToken = await jwt.sign(user2, process.env.ACCESS_TOKEN_KEY);
+      // res.json({
+      //   accessToken: accessToken,
+      //   id: userRespond._id,
+      //   username: userRespond.username,
+      // });
+      const userRespond = await newUser.save();
+      const accessToken = await userRespond.generateJWT();
+      res.json({
+        token: accessToken,
+        user: userRespond,
+      });
+    }
+  } catch (error) {
+    console.log(error);
   }
 };
 module.exports = authController;

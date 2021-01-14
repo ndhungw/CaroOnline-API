@@ -44,6 +44,9 @@ router.post(
   Auth.login
 );
 
+router.post("/login-google", Auth.loginWithGoogle);
+
+router.post("/login-facebook", Auth.loginWithFacebook);
 // Password RESET
 router.post(
   "/recover",
