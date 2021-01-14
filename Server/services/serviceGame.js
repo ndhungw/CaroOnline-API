@@ -24,6 +24,8 @@ const ServiceGame = {
     const firstTurn = ((room.PlayedGames.length) % 2) + 1;
     const game = await games.createNewGame({ room, maxCol, maxRow, firstTurn, winCondition });
 
+    await game.populate('player1').populate('player2').execPopulate();
+
 
     room.CurrentGame = game._id;
     room.PlayedGames.push(game._id);

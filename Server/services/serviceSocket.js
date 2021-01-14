@@ -92,6 +92,7 @@ module.exports = function (io) {
 
         newGame.winner = 3 - newGame.playerMoveNext;
         await newGame.save();
+        await newGame.populate('player1').populate('player2').execPopulate();
         await declareWinner(newGame, "timeout");
         console.log(countdown);
       }
@@ -136,6 +137,7 @@ module.exports = function (io) {
 
     socket.on("new-game", async ({ gameId }) => {
       const game = await Game.findById(gameId);
+      await game.populate('player1').populate('player2').execPopulate();
 
       socket.to(game.roomId.toString()).emit("update-new-game", game);
 
@@ -158,11 +160,14 @@ module.exports = function (io) {
         game.winner = player;
         await game.save();
 
+        await game.populate('player1').populate('player2').execPopulate();
+
         await declareWinner(game, "winner-found");
       } else {
         console.log("emit update-board");
         game.playerMoveNext = 3 - game.playerMoveNext;
         await game.save();
+        await game.populate('player1').populate('player2').execPopulate();
 
         io.in(game.roomId.toString()).emit("update-board", game);
       }
