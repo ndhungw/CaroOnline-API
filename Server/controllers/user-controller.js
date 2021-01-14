@@ -9,9 +9,22 @@ const { dataUri } = require("../middlewares/dataUri");
  * @access Public
  */
 userController.getAll = async (req, res) => {
-  const users = await User.find({});
-  res.status(200).json(users);
+  const { username } = req.query;
+  const query = req.query;
+
+  try {
+    const users = await User.find(query);
+
+    if (username) {
+      return res.status(200).json(users[0]);
+    } else {
+      return res.status(200).json(users);
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
+
 
 /**
  * @route PUT api/users
